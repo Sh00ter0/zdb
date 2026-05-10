@@ -7,31 +7,31 @@ namespace Client.Enums
 {
     public enum TextChannelType
     {
-        [Display(Name = "Unknown", ShortName = "Unknown", Description = "Unknown channel type")]
+        [DiscordSelectOption(label: "Unknown")]
         Unknown = 0,
 
-        [Display(Name = "Direct Message", ShortName = "DM", Description = "Direct message channel")]
+        [DiscordSelectOption(label: "Direct Message", description: "Direct message channel")]
         DirectMessage = 1,
 
-        [Display(Name = "Text Channel", ShortName = "Text", Description = "Text channel")]
+        [DiscordSelectOption(label: "Text Channel", description: "Text channel")]
         GuildTextChannel = 2,
 
-        [Display(Name = "Announcement Channel", ShortName = "Announcement", Description = "Announcement channel")]
+        [DiscordSelectOption(label: "Announcement Channel", description: "Announcement channel")]
         GuildAnnouncementChannel = 3,
 
-        [Display(Name = "Public Thread Channel", ShortName = "Public Thread", Description = "Public thread channel")]
+        [DiscordSelectOption(label: "Public Thread Channel", description: "Public thread channel")]
         GuildPublicThreadChannel = 4,
 
-        [Display(Name = "Private Thread Channel", ShortName = "Private Thread", Description = "Private thread channel")]
+        [DiscordSelectOption(label: "Private Thread Channel", description: "Private thread channel")]
         GuildPrivateThreadChannel = 5,
 
-        [Display(Name = "Forum Thread Channel", ShortName = "Forum", Description = "Forum thread channel")]
+        [DiscordSelectOption(label: "Forum Thread Channel", description: "Forum thread channel")]
         GuildForumThreadChannel = 6,
 
-        [Display(Name = "Voice Text Channel", ShortName = "Voice", Description = "Voice text channel")]
+        [DiscordSelectOption(label: "Voice Text Channel", description: "Voice text channel")]
         GuildVoiceTextChannel = 7,
 
-        [Display(Name = "Stage Voice Text Channel", ShortName = "Stage", Description = "Stage voice text channel")]
+        [DiscordSelectOption(label: "Stage Voice Text Channel", description: "Stage voice text channel")]
         GuildStageVoiceTextChannel = 8
     }
 
@@ -94,5 +94,14 @@ namespace Client.Enums
 
         [DiscordSelectOption(label: "Enable or disable user", description: "Allows enabling or disabling the user.", emote: "UI_ICON_USER_LOCK", requiredPermission: "system.admins.write")]
         EnableOrDisableUser = 3
+    }
+
+    public enum IsActive
+    {
+        [DiscordSelectOption(label: "Active", emote: "UI_ICON_ACTIVE")]
+        True,
+
+        [DiscordSelectOption(label: "Inactive", emote: "UI_ICON_INACTIVE")]
+        False
     }
 }

@@ -277,11 +277,11 @@ namespace Client.Services
         {
             var discordCreatedAtTimestamp = $"<t:{((DateTimeOffset)target.CreatedAtUtc).ToUnixTimeSeconds()}:F>";
             var discordUpdatedAtTimestamp = target.UpdatedAtUtc != null ? $"<t:{((DateTimeOffset)target.UpdatedAtUtc).ToUnixTimeSeconds()}:F>" : "`N/A`";
-            string friendlyChannelType = target.ChannelType.GetDisplayName();
+            string friendlyChannelType = target.ChannelType.GetDiscordLabel();
             string guildInfo = target.AssociatedGuildId.HasValue ? $"`{target.AssociatedGuildId.Value}`" : "`N/A`";
 
             var bodyText = $"""
-                **Friendly Name:** `{target.Name}`
+                **Name:** `{target.Name}`
                 **Target ID:** `{target.TargetId}`
                 **Type:** `{friendlyChannelType}`
                 **Associated Guild:** {guildInfo}

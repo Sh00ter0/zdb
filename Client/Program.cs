@@ -57,7 +57,6 @@ try
     builder.Services.AddHostedService<StartupService>();
 
     var app = builder.Build();
-
     app.UseForwardedHeaders();
     app.UseRouting();
 

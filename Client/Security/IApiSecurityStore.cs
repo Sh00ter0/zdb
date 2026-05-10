@@ -67,7 +67,7 @@ namespace Client.Security
                 await dbContext.Database.MigrateAsync();
                 _logger.LogDebug("Database migrations applied successfully.");
 
-                var testRecord = await dbContext.ZabbixCredentials.AsNoTracking().FirstOrDefaultAsync();
+                var testRecord = await dbContext.ZabbixCredentials.AsNoTracking().OrderBy(x => x.Id).FirstOrDefaultAsync();
 
                 if (testRecord != null)
                 {
