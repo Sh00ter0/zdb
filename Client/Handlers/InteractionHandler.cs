@@ -133,7 +133,7 @@ public class InteractionHandler(
             try
             {
                 using var scope = services.CreateScope();
-                var adminRepo = scope.ServiceProvider.GetRequiredService<IBotAdminRepository>();
+                var adminRepo = scope.ServiceProvider.GetRequiredService<SystemAdministratorRepository>();
 
                 var adminEntity = await adminRepo.GetByDiscordIdAsync(interaction.User.Id);
                 var context = new AppInteractionContext(client, interaction, adminEntity);

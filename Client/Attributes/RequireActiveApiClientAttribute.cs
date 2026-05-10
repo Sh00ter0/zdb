@@ -21,7 +21,7 @@ namespace Client.Attributes
                 return PreconditionResult.FromError("Critical error: Invalid API ID parameter type.");
             }
 
-            var apiClientRepository = services.GetRequiredService<IApiClientRepository>();
+            var apiClientRepository = services.GetRequiredService<IntegrationClientRepository>();
 
             var isActive = await apiClientRepository.IsActiveAsync(apiId);
 

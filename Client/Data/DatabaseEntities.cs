@@ -1,11 +1,9 @@
 ﻿using Client.Enums;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Client.Data; // C# File-scoped namespace
+namespace Client.Data;
 
 [Table("IntegrationClients")]
 [Index(nameof(Name), IsUnique = true)]

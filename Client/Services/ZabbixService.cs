@@ -28,7 +28,7 @@ namespace Client.Services
         private readonly IDbContextFactory<ApiSecurityDbContext> _dbContextFactory;
         private readonly IEncryptionService _encryptionService;
         private readonly IApiSecurityStore _apiSecurityStore;
-        private readonly IApiClientRepository _clientRepository;
+        private readonly IntegrationClientRepository _clientRepository;
         private readonly ILogger<ZabbixService> _logger;
 
         public ZabbixService(
@@ -36,7 +36,7 @@ namespace Client.Services
             IDbContextFactory<ApiSecurityDbContext> dbContextFactory,
             IEncryptionService encryptionService,
             IApiSecurityStore apiSecurityStore,
-            IApiClientRepository clientRepository,
+            IntegrationClientRepository clientRepository,
             ILogger<ZabbixService> logger)
         {
             _httpClient = httpClient;

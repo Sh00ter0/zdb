@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Client.Data.Repositories
 {
-    public interface IApiTargetRepository
+    public interface KnownDeliveryTargetRepository
     {
         Task<KnownDeliveryTargetEntity?> GetByIdAsync(long clientId, long discordTargetId);
         Task<KnownDeliveryTargetEntity?> GetByDiscordIdAsync(long clientId, ulong discordTargetId);
@@ -20,7 +20,7 @@ namespace Client.Data.Repositories
         Task<bool> DeleteByIdAsync(long clientId, long targetRecordId);
     }
 
-    public class ApiTargetRepository : IApiTargetRepository
+    public class ApiTargetRepository : KnownDeliveryTargetRepository
     {
         private readonly IDbContextFactory<ApiSecurityDbContext> _dbContextFactory;
         private readonly ILogger<ApiTargetRepository> _logger;

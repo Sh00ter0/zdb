@@ -29,8 +29,8 @@ namespace Client.InteractionModules
         {
             private readonly ILogger<ClientCommandsGroup> _logger;
             private readonly IApiSecurityStore _apiSecurityStore;
-            private readonly IApiClientRepository _apiClientRepository;
-            private readonly IApiTargetRepository _targetRepository;
+            private readonly IntegrationClientRepository _apiClientRepository;
+            private readonly KnownDeliveryTargetRepository _targetRepository;
             private readonly IDiscordUiService _discordUiService;
             private readonly IPaginationService _paginationService;
             private readonly IApplicationEmoteCache _emoteCache;
@@ -38,8 +38,8 @@ namespace Client.InteractionModules
             public ClientCommandsGroup(
                 ILogger<ClientCommandsGroup> logger,
                 IApiSecurityStore apiSecurityStore,
-                IApiClientRepository apiClientRepository,
-                IApiTargetRepository targetRepository,
+                IntegrationClientRepository apiClientRepository,
+                KnownDeliveryTargetRepository targetRepository,
                 IDiscordUiService discordUiService,
                 IPaginationService paginationService,
                 IApplicationEmoteCache emoteCacheService)
@@ -62,14 +62,17 @@ namespace Client.InteractionModules
 
                 try
                 {
+                    var isValidUrl = zabbixApiUrl.IsValidHttpOrHttpsUrl();
+                    if (!isValidUrl) throw new UserVisibleException("The provided Zabbix API URL is not valid. Please ensure it starts with http:// or https:// and is properly formatted.");
+
                     var createdClient = await _apiSecurityStore.CreateApiClientAsync(clientName, zabbixApiUrl, zabbixApiToken);
 
                     var bodyText = $"""
-                                    **Client name:** {createdClient.Name}
-                                    **Zabbix API URL:** {zabbixApiUrl}
+                                    **Client name:** `{createdClient.Name}`
+                                    **Zabbix API URL:** `{zabbixApiUrl}`
                                     **API key:** `{createdClient.ApiKey}`
                                     
-                                    **Important:** Copy and store this key now. It is only shown once.
+                                    ⚠️ **Warning!:** Copy and store this key now. It is only shown once.
                                     """;
 
                     var components = _discordUiService.CreateStandardContainer(header: "API key created", accentColor: null, body: bodyText);
@@ -400,8 +403,8 @@ namespace Client.InteractionModules
         {
             private readonly ILogger<WellKnownTargetsCommandsGroup> _logger;
             private readonly IApiSecurityStore _apiSecurityStore;
-            private readonly IApiClientRepository _apiClientRepository;
-            private readonly IApiTargetRepository _targetRepository;
+            private readonly IntegrationClientRepository _apiClientRepository;
+            private readonly KnownDeliveryTargetRepository _targetRepository;
             private readonly IDiscordUiService _discordUiService;
             private readonly IPaginationService _paginationService;
             private readonly IDiscordTargetSyncService _syncService;
@@ -410,8 +413,8 @@ namespace Client.InteractionModules
             public WellKnownTargetsCommandsGroup(
                 ILogger<WellKnownTargetsCommandsGroup> logger,
                 IApiSecurityStore apiSecurityStore,
-                IApiClientRepository apiClientRepository,
-                IApiTargetRepository targetRepository,
+                IntegrationClientRepository apiClientRepository,
+                KnownDeliveryTargetRepository targetRepository,
                 IDiscordUiService discordUiService,
                 IPaginationService paginationService,
                 IDiscordTargetSyncService syncService,
@@ -807,7 +810,7 @@ namespace Client.InteractionModules
         public class AdministrationCommandsGroup : InteractionModuleBase<AppInteractionContext>
         {
             private readonly ILogger<AdministrationCommandsGroup> _logger;
-            private readonly IBotAdminRepository _adminRepository;
+            private readonly SystemAdministratorRepository _adminRepository;
             private readonly IDiscordUiService _discordUiService;
             private readonly IPaginationService _paginationService;
             private readonly IApplicationEmoteCache _emoteCache;
@@ -815,7 +818,7 @@ namespace Client.InteractionModules
 
             public AdministrationCommandsGroup(
                 ILogger<AdministrationCommandsGroup> logger,
-                IBotAdminRepository adminRepository,
+                SystemAdministratorRepository adminRepository,
                 IDiscordUiService discordUiService,
                 IPaginationService paginationService,
                 IApplicationEmoteCache emoteCache,
@@ -1162,8 +1165,8 @@ namespace Client.InteractionModules
     {
         private readonly ILogger<ClientCommandsGroup> _logger;
         private readonly IApiSecurityStore _apiSecurityStore;
-        private readonly IApiClientRepository _apiClientRepository;
-        private readonly IApiTargetRepository _targetRepository;
+        private readonly IntegrationClientRepository _apiClientRepository;
+        private readonly KnownDeliveryTargetRepository _targetRepository;
         private readonly IDiscordUiService _discordUiService;
         private readonly IPaginationService _paginationService;
         private readonly IApplicationEmoteCache _emoteCache;
@@ -1172,8 +1175,8 @@ namespace Client.InteractionModules
         public ZabbixDirectMessageComponents(
             ILogger<ClientCommandsGroup> logger,
             IApiSecurityStore apiSecurityStore,
-            IApiClientRepository apiClientRepository,
-            IApiTargetRepository targetRepository,
+            IntegrationClientRepository apiClientRepository,
+            KnownDeliveryTargetRepository targetRepository,
             IDiscordUiService discordUiService,
             IPaginationService paginationService,
             IApplicationEmoteCache emoteCache,

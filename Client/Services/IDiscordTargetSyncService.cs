@@ -17,11 +17,11 @@ namespace Client.Services
 
     public class DiscordTargetSyncService : IDiscordTargetSyncService
     {
-        private readonly IApiTargetRepository _targetRepository;
+        private readonly KnownDeliveryTargetRepository _targetRepository;
         private readonly ILogger<DiscordTargetSyncService> _logger;
 
         public DiscordTargetSyncService(
-            IApiTargetRepository targetRepository,
+            KnownDeliveryTargetRepository targetRepository,
             ILogger<DiscordTargetSyncService> logger)
         {
             _targetRepository = targetRepository;

@@ -62,7 +62,7 @@ namespace Client.Handlers
             IParameterInfo parameter,
             IServiceProvider services)
         {
-            var apiAdminRepository = services.GetRequiredService<IBotAdminRepository>();
+            var apiAdminRepository = services.GetRequiredService<SystemAdministratorRepository>();
             if (!await apiAdminRepository.IsActiveAsync(context.User.Id))
             {
                 return AutocompletionResult.FromSuccess(Enumerable.Empty<AutocompleteResult>());
