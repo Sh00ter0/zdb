@@ -2,6 +2,7 @@
 using Client.Data.Repositories;
 using Client.Enums;
 using Client.Models;
+using Client.Policies;
 using Client.Services;
 using Discord;
 using Discord.WebSocket;
@@ -16,7 +17,7 @@ using System.Threading.Tasks;
 namespace Client.Controllers
 {
     [ApiController]
-    [Authorize(Policy = "ZabbixIngress")]
+    [Authorize(Policy = Policy.ZabbixIngress)]
     [EnableRateLimiting("zabbix-api")]
     [Route("api/[controller]")]
     public class ZabbixController : ControllerBase
@@ -24,64 +25,35 @@ namespace Client.Controllers
         private const string ErrorIdPrefix = "DZB";
 
         private readonly DiscordSocketClient _client;
-        private readonly IntegrationClientRepository _clientRepository;
         private readonly KnownDeliveryTargetRepository _targetRepository;
-        private readonly DiscordStateService _stateService;
         private readonly IDiscordTargetSyncService _targetSyncService;
         private readonly IDiscordUiService _discordUiService;
         private readonly ILogger<ZabbixController> _logger;
 
         public ZabbixController(
             DiscordSocketClient client,
-            IntegrationClientRepository clientRepository,
             KnownDeliveryTargetRepository targetRepository,
-            DiscordStateService stateService,
             IDiscordTargetSyncService targetSyncService,
             IDiscordUiService discordUiService,
             ILogger<ZabbixController> logger)
         {
             _client = client;
-            _clientRepository = clientRepository;
             _targetRepository = targetRepository;
-            _stateService = stateService;
             _targetSyncService = targetSyncService;
             _discordUiService = discordUiService;
             _logger = logger;
         }
 
         [HttpPost("{targetDiscordId}")]
+        [Authorize(Policy = Policy.TargetAccess)]
         [RequestSizeLimit(1024 * 1024)]
         public async Task<IActionResult> ReceiveAlert(ulong targetDiscordId, [FromBody] ZabbixPayload payload)
         {
             _logger.LogInformation("Received Zabbix alert payload for Discord target {TargetId}. Event ID: {EventId}", targetDiscordId, payload.EventId);
             var apiClientIdClaim = User.FindFirstValue("ApiClientId");
-            if (!long.TryParse(apiClientIdClaim, out var apiClientId))
-            {
-                _logger.LogWarning("Rejecting Zabbix alert {EventId}: API client ID claim is missing or invalid.", payload.EventId);
-                return Unauthorized();
-            }
-
-            var apiClientEntity = await _clientRepository.GetByIdAsync(apiClientId);
-
-            if (apiClientEntity == null)
-            {
-                _logger.LogWarning("Rejecting Zabbix alert {EventId}: API client ID {ClientId} not found in the database.", payload.EventId, apiClientId);
-                return Unauthorized();
-            }
-
-            if (!apiClientEntity.IsActive)
-            {
-                _logger.LogWarning("Rejecting Zabbix alert {EventId}: API client ID {ClientId} is inactive.", payload.EventId, apiClientId);
-                return Unauthorized();
-            }
+            long.TryParse(apiClientIdClaim, out var apiClientId);
 
             var targetEntity = await _targetRepository.GetByDiscordIdAsync(apiClientId, targetDiscordId);
-
-            if (targetEntity == null)
-            {
-                _logger.LogWarning("Rejecting Zabbix alert: API client ID {ClientId} is not authorized for target {TargetId}.", apiClientId, targetDiscordId);
-                return Forbid();
-            }
 
             try
             {
