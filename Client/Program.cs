@@ -1,6 +1,7 @@
 ﻿using Client.Data;
 using Client.Data.Repositories;
 using Client.Handlers;
+using Client.Middleware;
 using Client.Models;
 using Client.Security;
 using Client.Services;
@@ -61,26 +62,14 @@ try
     app.UseForwardedHeaders();
     app.UseRouting();
 
-    app.Use(async (context, next) =>
-    {
-        if (!app.Environment.IsDevelopment() && !apiConfig.allowInsecureHttp && !context.Request.IsHttps)
-        {
-            Log.Warning("Rejected insecure HTTP request for path {Path}", context.Request.Path);
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsJsonAsync(new
-            {
-                error = "HTTPS required",
-                message = "This API only accepts secure HTTPS requests."
-            });
-            return;
-        }
-        await next();
-    });
+    app.UseMiddleware<SecureRequestMiddleware>();
 
     app.UseAuthentication();
     app.UseRateLimiter();
     app.UseAuthorization();
     app.MapControllers();
+
+    app.UseMiddleware<DiscordStatusMiddleware>();
 
     await app.RunAsync();
 }

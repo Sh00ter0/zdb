@@ -54,13 +54,6 @@ namespace Client.Controllers
         public async Task<IActionResult> ReceiveAlert(ulong targetDiscordId, [FromBody] ZabbixPayload payload)
         {
             _logger.LogInformation("Received Zabbix alert payload for Discord target {TargetId}. Event ID: {EventId}", targetDiscordId, payload.EventId);
-
-            if (!_stateService.IsReady)
-            {
-                _logger.LogWarning("Rejecting Zabbix alert {EventId}: The Discord client is not connected or ready.", payload.EventId);
-                return StatusCode(503, new { error = "Discord client not ready" });
-            }
-
             var apiClientIdClaim = User.FindFirstValue("ApiClientId");
             if (!long.TryParse(apiClientIdClaim, out var apiClientId))
             {
