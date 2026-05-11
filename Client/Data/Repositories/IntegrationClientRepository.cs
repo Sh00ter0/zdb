@@ -1,19 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Application.Repositories;
+using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Client.Data.Repositories
 {
-    public interface IntegrationClientRepository
-    {
-        Task<IntegrationClientEntity?> GetByIdAsync(long id);
-        Task<IntegrationClientEntity?> GetByNameAsync(string name);
-        Task<IntegrationClientEntity?> GetByKeyHashAsync(string keyHash);
-        Task<bool> IsActiveAsync(long id);
-        Task<bool> AddAsync(IntegrationClientEntity entity);
-        Task<bool> UpdateAsync(IntegrationClientEntity entity);
-        Task<bool> DeleteAsync(long id);
-    }
-
-    public class ApiClientRepository : IntegrationClientRepository
+    public class ApiClientRepository : IIntegrationClientRepository
     {
         private readonly IDbContextFactory<ApiSecurityDbContext> _dbContextFactory;
         private readonly ILogger<ApiClientRepository> _logger;
@@ -24,19 +15,19 @@ namespace Client.Data.Repositories
             _logger = logger;
         }
 
-        public async Task<IntegrationClientEntity?> GetByIdAsync(long id)
+        public async Task<IntegrationClients?> GetByIdAsync(long id)
         {
             await using var db = await _dbContextFactory.CreateDbContextAsync();
             return await db.IntegrationClients.Include(c => c.ZabbixCredential).AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public async Task<IntegrationClientEntity?> GetByNameAsync(string name)
+        public async Task<IntegrationClients?> GetByNameAsync(string name)
         {
             await using var db = await _dbContextFactory.CreateDbContextAsync();
             return await db.IntegrationClients.Include(c => c.ZabbixCredential).AsNoTracking().FirstOrDefaultAsync(c => c.Name == name);
         }
 
-        public async Task<IntegrationClientEntity?> GetByKeyHashAsync(string keyHash)
+        public async Task<IntegrationClients?> GetByKeyHashAsync(string keyHash)
         {
             await using var db = await _dbContextFactory.CreateDbContextAsync();
             return await db.IntegrationClients.Include(c => c.ZabbixCredential).AsNoTracking().FirstOrDefaultAsync(c => c.KeyHash == keyHash);
@@ -51,7 +42,7 @@ namespace Client.Data.Repositories
             else return entity.IsActive;
         }
 
-        public async Task<bool> AddAsync(IntegrationClientEntity entity)
+        public async Task<bool> AddAsync(IntegrationClients entity)
         {
             await using var db = await _dbContextFactory.CreateDbContextAsync();
             db.IntegrationClients.Add(entity);
@@ -59,7 +50,7 @@ namespace Client.Data.Repositories
             return true;
         }
 
-        public async Task<bool> UpdateAsync(IntegrationClientEntity entity)
+        public async Task<bool> UpdateAsync(IntegrationClients entity)
         {
             try
             {

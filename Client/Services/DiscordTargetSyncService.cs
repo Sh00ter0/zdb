@@ -1,34 +1,27 @@
-﻿using Client.Data;
-using Client.Data.Repositories;
-using Client.Enums;
-using Client.Models;
+﻿using Application.Repositories;
+using Application.Services.Discord;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
+using Domain.Entities;
+using Domain.Enums;
 
 namespace Client.Services
 {
-    public interface IDiscordTargetSyncService
-    {
-        Task<KnownDeliveryTargetEntity?> VerifyAndUpdateTargetAsync(KnownDeliveryTargetEntity dbTarget, IChannel? resolvedChannel, IUser? resolvedUser);
-    }
 
     public class DiscordTargetSyncService : IDiscordTargetSyncService
     {
-        private readonly KnownDeliveryTargetRepository _targetRepository;
+        private readonly IKnownDeliveryTargetRepository _targetRepository;
         private readonly ILogger<DiscordTargetSyncService> _logger;
 
         public DiscordTargetSyncService(
-            KnownDeliveryTargetRepository targetRepository,
+            IKnownDeliveryTargetRepository targetRepository,
             ILogger<DiscordTargetSyncService> logger)
         {
             _targetRepository = targetRepository;
             _logger = logger;
         }
 
-        public async Task<KnownDeliveryTargetEntity?> VerifyAndUpdateTargetAsync(KnownDeliveryTargetEntity dbTarget, IChannel? resolvedChannel, IUser? resolvedUser)
+        public async Task<KnownDeliveryTargets?> VerifyAndUpdateTargetAsync(KnownDeliveryTargets dbTarget, IChannel? resolvedChannel, IUser? resolvedUser)
         {
             bool requiresUpdate = false;
             bool requiresRemoval = false;

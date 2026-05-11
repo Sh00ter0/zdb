@@ -1,22 +1,21 @@
-﻿using Client.Attributes;
+﻿using Application.Repositories;
+using Application.Services.API;
+using Application.Services.Discord;
+using Application.Services.Pagination;
+using Client.Attributes;
 using Client.Contexts;
 using Client.Data;
-using Client.Data.Repositories;
-using Client.Enums;
 using Client.Extensions;
 using Client.Handlers;
 using Client.Models;
-using Client.Security;
 using Client.Services;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Domain.Constants;
+using Domain.Entities;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using static Client.InteractionModules.ApiCommandsGroup;
 
 namespace Client.InteractionModules
@@ -29,20 +28,20 @@ namespace Client.InteractionModules
         {
             private readonly ILogger<ClientCommandsGroup> _logger;
             private readonly IApiSecurityStore _apiSecurityStore;
-            private readonly IntegrationClientRepository _apiClientRepository;
-            private readonly KnownDeliveryTargetRepository _targetRepository;
+            private readonly IIntegrationClientRepository _apiClientRepository;
+            private readonly IKnownDeliveryTargetRepository _targetRepository;
             private readonly IDiscordUiService _discordUiService;
             private readonly IPaginationService _paginationService;
-            private readonly IApplicationEmoteCache _emoteCache;
+            private readonly IDiscordEmoteService _emoteCache;
 
             public ClientCommandsGroup(
                 ILogger<ClientCommandsGroup> logger,
                 IApiSecurityStore apiSecurityStore,
-                IntegrationClientRepository apiClientRepository,
-                KnownDeliveryTargetRepository targetRepository,
+                IIntegrationClientRepository apiClientRepository,
+                IKnownDeliveryTargetRepository targetRepository,
                 IDiscordUiService discordUiService,
                 IPaginationService paginationService,
-                IApplicationEmoteCache emoteCacheService)
+                IDiscordEmoteService emoteCacheService)
             {
                 _logger = logger;
                 _apiSecurityStore = apiSecurityStore;
@@ -407,22 +406,22 @@ namespace Client.InteractionModules
         {
             private readonly ILogger<WellKnownTargetsCommandsGroup> _logger;
             private readonly IApiSecurityStore _apiSecurityStore;
-            private readonly IntegrationClientRepository _apiClientRepository;
-            private readonly KnownDeliveryTargetRepository _targetRepository;
+            private readonly IIntegrationClientRepository _apiClientRepository;
+            private readonly IKnownDeliveryTargetRepository _targetRepository;
             private readonly IDiscordUiService _discordUiService;
             private readonly IPaginationService _paginationService;
             private readonly IDiscordTargetSyncService _syncService;
-            private readonly IApplicationEmoteCache _emoteCache;
+            private readonly IDiscordEmoteService _emoteCache;
 
             public WellKnownTargetsCommandsGroup(
                 ILogger<WellKnownTargetsCommandsGroup> logger,
                 IApiSecurityStore apiSecurityStore,
-                IntegrationClientRepository apiClientRepository,
-                KnownDeliveryTargetRepository targetRepository,
+                IIntegrationClientRepository apiClientRepository,
+                IKnownDeliveryTargetRepository targetRepository,
                 IDiscordUiService discordUiService,
                 IPaginationService paginationService,
                 IDiscordTargetSyncService syncService,
-                IApplicationEmoteCache emoteCache)
+                IDiscordEmoteService emoteCache)
             {
                 _logger = logger;
                 _apiSecurityStore = apiSecurityStore;
@@ -483,7 +482,7 @@ namespace Client.InteractionModules
                 var client = await _apiClientRepository.GetByNameAsync(clientName);
                 if (client == null || !client.IsActive) throw new UserVisibleException($"Failed to add target. Active API Client `{clientName}` was not found.");
 
-                var newTarget = new KnownDeliveryTargetEntity
+                var newTarget = new KnownDeliveryTargets
                 {
                     IntegrationClientId = client.Id,
                     TargetId = targetId,
@@ -814,18 +813,18 @@ namespace Client.InteractionModules
         public class AdministrationCommandsGroup : InteractionModuleBase<AppInteractionContext>
         {
             private readonly ILogger<AdministrationCommandsGroup> _logger;
-            private readonly SystemAdministratorRepository _adminRepository;
+            private readonly ISystemAdministratorRepository _adminRepository;
             private readonly IDiscordUiService _discordUiService;
             private readonly IPaginationService _paginationService;
-            private readonly IApplicationEmoteCache _emoteCache;
+            private readonly IDiscordEmoteService _emoteCache;
             private readonly IDbContextFactory<ApiSecurityDbContext> _dbFactory;
 
             public AdministrationCommandsGroup(
                 ILogger<AdministrationCommandsGroup> logger,
-                SystemAdministratorRepository adminRepository,
+                ISystemAdministratorRepository adminRepository,
                 IDiscordUiService discordUiService,
                 IPaginationService paginationService,
-                IApplicationEmoteCache emoteCache,
+                IDiscordEmoteService emoteCache,
                 IDbContextFactory<ApiSecurityDbContext> dbFactory)
             {
                 _logger = logger;
@@ -869,7 +868,7 @@ namespace Client.InteractionModules
                     throw new UserVisibleException($"User <@{user.Id}> is already registered in the system.");
                 }
 
-                var newAdmin = new SystemAdministratorEntity
+                var newAdmin = new SystemAdministrators
                 {
                     DiscordUserId = user.Id,
                     CreatedById = Context.Admin!.Id,
@@ -911,7 +910,7 @@ namespace Client.InteractionModules
 
                 var dbAdmins = await _adminRepository.GetAllAsync();
 
-                var adminDataList = new List<(SystemAdministratorEntity Entity, IUser? DiscordUser, string Username)>();
+                var adminDataList = new List<(SystemAdministrators Entity, IUser? DiscordUser, string Username)>();
 
                 foreach (var admin in dbAdmins)
                 {
@@ -1169,21 +1168,21 @@ namespace Client.InteractionModules
     {
         private readonly ILogger<ClientCommandsGroup> _logger;
         private readonly IApiSecurityStore _apiSecurityStore;
-        private readonly IntegrationClientRepository _apiClientRepository;
-        private readonly KnownDeliveryTargetRepository _targetRepository;
+        private readonly IIntegrationClientRepository _apiClientRepository;
+        private readonly IKnownDeliveryTargetRepository _targetRepository;
         private readonly IDiscordUiService _discordUiService;
         private readonly IPaginationService _paginationService;
-        private readonly IApplicationEmoteCache _emoteCache;
+        private readonly IDiscordEmoteService _emoteCache;
         private readonly ZabbixService _zabbixService;
 
         public ZabbixDirectMessageComponents(
             ILogger<ClientCommandsGroup> logger,
             IApiSecurityStore apiSecurityStore,
-            IntegrationClientRepository apiClientRepository,
-            KnownDeliveryTargetRepository targetRepository,
+            IIntegrationClientRepository apiClientRepository,
+            IKnownDeliveryTargetRepository targetRepository,
             IDiscordUiService discordUiService,
             IPaginationService paginationService,
-            IApplicationEmoteCache emoteCache,
+            IDiscordEmoteService emoteCache,
             ZabbixService zabbixService)
         {
             _logger = logger;

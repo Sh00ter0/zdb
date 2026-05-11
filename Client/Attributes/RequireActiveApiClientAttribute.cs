@@ -1,10 +1,6 @@
-﻿using Client.Data.Repositories;
-using Client.Security;
+﻿using Application.Repositories;
 using Discord;
 using Discord.Interactions;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
 
 namespace Client.Attributes
 {
@@ -21,7 +17,7 @@ namespace Client.Attributes
                 return PreconditionResult.FromError("Critical error: Invalid API ID parameter type.");
             }
 
-            var apiClientRepository = services.GetRequiredService<IntegrationClientRepository>();
+            var apiClientRepository = services.GetRequiredService<IIntegrationClientRepository>();
 
             var isActive = await apiClientRepository.IsActiveAsync(apiId);
 

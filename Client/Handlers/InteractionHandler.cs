@@ -1,17 +1,12 @@
-﻿using Client.Contexts;
-using Client.Data.Repositories;
-using Client.Enums;
+﻿using Application.Repositories;
+using Application.Services.Discord;
+using Client.Contexts;
 using Client.Models;
-using Client.Services;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System;
+using Domain.Constants;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace Client.Handlers;
 
@@ -21,7 +16,7 @@ public class InteractionHandler(
     IServiceProvider services,
     IDiscordUiService discordUiService,
     ILogger<InteractionHandler> logger,
-    IApplicationEmoteCache emoteCache)
+    IDiscordEmoteService emoteCache)
 {
     private const string ErrorIdPrefix = "SYS";
 
@@ -93,7 +88,7 @@ public class InteractionHandler(
             try
             {
                 using var scope = services.CreateScope();
-                var adminRepo = scope.ServiceProvider.GetRequiredService<SystemAdministratorRepository>();
+                var adminRepo = scope.ServiceProvider.GetRequiredService<ISystemAdministratorRepository>();
 
                 var adminEntity = await adminRepo.GetByDiscordIdAsync(interaction.User.Id);
                 var context = new AppInteractionContext(client, interaction, adminEntity);
@@ -112,7 +107,7 @@ public class InteractionHandler(
                         var components = discordUiService.CreateStandardContainer(
                             header: "Critical System Error",
                             body: "A critical internal error occurred while processing your request.",
-                            accentColor: AppColors.Error,
+                            accentColor: new Color(AppColors.Error),
                             footerNote: $"Reference: `{errorId}`"
                         );
 

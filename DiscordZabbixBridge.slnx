@@ -1,4 +1,6 @@
 <Solution>
+  <Project Path="Application/Application.csproj" Id="579b6d28-d351-4453-b6f3-4c722f421771" />
   <Project Path="Client/Client.csproj" />
+  <Project Path="Domain/Domain.csproj" />
   <Project Path="Key.Generator/Key.Generator.csproj" />
 </Solution>

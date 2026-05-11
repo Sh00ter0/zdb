@@ -1,16 +1,13 @@
-﻿using Client.Data.Repositories;
+﻿using Application.Repositories;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 
 namespace Client.Services;
 
 /// <summary>
 /// </summary>
 public class FirstRunAdminSetupService(
-    SystemAdministratorRepository adminRepository,
+    ISystemAdministratorRepository adminRepository,
     DiscordSocketClient discordClient,
     ILogger<FirstRunAdminSetupService> logger)
 {

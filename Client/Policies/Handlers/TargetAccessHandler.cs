@@ -1,4 +1,4 @@
-﻿using Client.Data.Repositories;
+﻿using Application.Repositories;
 using Client.Policies.Requirements;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -9,10 +9,10 @@ namespace Client.Policies.Handlers
     {
         private readonly ILogger<TargetAccessHandler> _logger;
         private readonly IHttpContextAccessor _contextAccessor;
-        private readonly KnownDeliveryTargetRepository _targetRepository;
+        private readonly IKnownDeliveryTargetRepository _targetRepository;
         public TargetAccessHandler(ILogger<TargetAccessHandler> logger,
             IHttpContextAccessor contextAccessor,
-            KnownDeliveryTargetRepository targetRepository)
+            IKnownDeliveryTargetRepository targetRepository)
         {
             _logger = logger;
             _contextAccessor = contextAccessor;

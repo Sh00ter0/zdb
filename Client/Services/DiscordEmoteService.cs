@@ -1,31 +1,19 @@
-﻿using Discord;
+﻿using Application.Services.Discord;
+using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Client.Services
 {
-    public interface IApplicationEmoteCache
-    {
-        Task RefreshCacheAsync();
-        IEmote? GetEmote(string? name);
-        Task SynchronizeEmotesAsync();
-    }
-
-    public class ApplicationEmoteCache : IApplicationEmoteCache
+    public class DiscordEmoteService : IDiscordEmoteService
     {
         private readonly DiscordSocketClient _client;
-        private readonly ILogger<ApplicationEmoteCache> _logger;
+        private readonly ILogger<DiscordEmoteService> _logger;
 
         private Dictionary<string, Emote> _emotes = new(StringComparer.OrdinalIgnoreCase);
 
         private readonly string _emotesDirectory = Path.Combine(AppContext.BaseDirectory, "Assets", "Emotes");
 
-        public ApplicationEmoteCache(DiscordSocketClient client, ILogger<ApplicationEmoteCache> logger)
+        public DiscordEmoteService(DiscordSocketClient client, ILogger<DiscordEmoteService> logger)
         {
             _client = client;
             _logger = logger;

@@ -1,9 +1,5 @@
-﻿using Client.Enums;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
+﻿using Application.Common.Config;
 using Serilog;
-using System;
-using System.Collections.Generic;
 using VaultSharp.Extensions.Configuration;
 using VaultSharp.V1.AuthMethods.AppRole;
 

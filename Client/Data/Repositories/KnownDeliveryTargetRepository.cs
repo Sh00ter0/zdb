@@ -1,26 +1,11 @@
-﻿using Client.Data;
-using Client.Models;
+﻿using Application.Repositories;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Client.Data.Repositories
 {
-    public interface KnownDeliveryTargetRepository
-    {
-        Task<KnownDeliveryTargetEntity?> GetByIdAsync(long clientId, long discordTargetId);
-        Task<KnownDeliveryTargetEntity?> GetByDiscordIdAsync(long clientId, ulong discordTargetId);
-        Task<KnownDeliveryTargetEntity?> GetByNameAsync(long clientId, string name);
-        Task<List<KnownDeliveryTargetEntity>> GetAllByClientIdAsync(long clientId);
-        Task<bool> AddAsync(KnownDeliveryTargetEntity entity);
-        Task<bool> UpdateAsync(KnownDeliveryTargetEntity entity);
-        Task<bool> DeleteByIdAsync(long clientId, long targetRecordId);
-    }
 
-    public class ApiTargetRepository : KnownDeliveryTargetRepository
+    public class ApiTargetRepository : IKnownDeliveryTargetRepository
     {
         private readonly IDbContextFactory<ApiSecurityDbContext> _dbContextFactory;
         private readonly ILogger<ApiTargetRepository> _logger;
@@ -31,7 +16,7 @@ namespace Client.Data.Repositories
             _logger = logger;
         }
 
-        public async Task<KnownDeliveryTargetEntity?> GetByIdAsync(long clientId, long id)
+        public async Task<KnownDeliveryTargets?> GetByIdAsync(long clientId, long id)
         {
             await using var db = await _dbContextFactory.CreateDbContextAsync();
             return await db.KnownDeliveryTargets
@@ -40,7 +25,7 @@ namespace Client.Data.Repositories
                 .FirstOrDefaultAsync(t => t.IntegrationClientId == clientId && t.Id == id);
         }
 
-        public async Task<KnownDeliveryTargetEntity?> GetByDiscordIdAsync(long clientId, ulong discordTargetId)
+        public async Task<KnownDeliveryTargets?> GetByDiscordIdAsync(long clientId, ulong discordTargetId)
         {
             await using var db = await _dbContextFactory.CreateDbContextAsync();
             return await db.KnownDeliveryTargets
@@ -49,7 +34,7 @@ namespace Client.Data.Repositories
                 .FirstOrDefaultAsync(t => t.IntegrationClientId == clientId && t.TargetId == discordTargetId);
         }
 
-        public async Task<KnownDeliveryTargetEntity?> GetByNameAsync(long clientId, string name)
+        public async Task<KnownDeliveryTargets?> GetByNameAsync(long clientId, string name)
         {
             await using var db = await _dbContextFactory.CreateDbContextAsync();
             return await db.KnownDeliveryTargets
@@ -58,7 +43,7 @@ namespace Client.Data.Repositories
                 .FirstOrDefaultAsync(t => t.IntegrationClientId == clientId && t.Name == name);
         }
 
-        public async Task<List<KnownDeliveryTargetEntity>> GetAllByClientIdAsync(long clientId)
+        public async Task<List<KnownDeliveryTargets>> GetAllByClientIdAsync(long clientId)
         {
             await using var db = await _dbContextFactory.CreateDbContextAsync();
             return await db.KnownDeliveryTargets
@@ -69,7 +54,7 @@ namespace Client.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<bool> AddAsync(KnownDeliveryTargetEntity entity)
+        public async Task<bool> AddAsync(KnownDeliveryTargets entity)
         {
             try
             {
@@ -86,7 +71,7 @@ namespace Client.Data.Repositories
             }
         }
 
-        public async Task<bool> UpdateAsync(KnownDeliveryTargetEntity entity)
+        public async Task<bool> UpdateAsync(KnownDeliveryTargets entity)
         {
             try
             {

@@ -1,49 +1,22 @@
-﻿using Client.Data;
-using Client.Enums;
+﻿using Application.Common.Zabbix;
+using Application.Services.Discord;
 using Client.Extensions;
-using Client.Models;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
+using Domain.Constants;
+using Domain.Entities;
+using Domain.Enums;
 using System.Reflection;
 using System.Text;
 
 namespace Client.Services
 {
-    public interface IDiscordUiService
-    {
-        MessageComponent CreateStandardContainer(string header, string body, Color? accentColor = null, string? footerNote = null);
-        Modal CreateConfirmationModal(string customId, string title, string inputLabel, string placeholder, int maxLength);
-        MessageComponent CreatePaginatedContainer(string header, string pageText, int currentPage, int totalPages, string sessionId, Color? accentColor = null, ButtonBuilder? customActionBtn = null);
-        MessageComponent CreateZabbixAlertContainer(ZabbixPayload payload, bool isDM, long apiClientId);
-
-        SelectMenuBuilder GetZabbixAckMenuBuilder(string customId, bool currentState);
-        SelectMenuBuilder GetZabbixSeverityMenuBuilder(string customId, int currentSeverity);
-        MessageComponent CreateZabbixManagementPanel(string eventId, SelectMenuBuilder ackMenu, SelectMenuBuilder sevMenu, ButtonBuilder commentBtn);
-        Modal CreateZabbixCommentModal(string customId);
-
-        MessageComponent CreateTargetOverviewContainer(string clientName, KnownDeliveryTargetEntity target, Action<ContainerBuilder> appendComponents = null!);
-        SelectMenuBuilder GetTargetManagementMenuBuilder(string customId, List<string> userPermissions);
-        SelectMenuBuilder GetCrosspostSelectMenuBuilder(string customId, bool currentState);
-
-        MessageComponent CreateApiClientOverviewContainer(IntegrationClientEntity client, Action<ContainerBuilder> appendComponents = null!);
-        SelectMenuBuilder GetApiClientManagementMenuBuilder(string customId, List<string> userPermissions);
-        SelectMenuBuilder GetClientStatusSelectMenuBuilder(string customId, bool currentState);
-
-        MessageComponent CreateAdminOverviewContainer(SystemAdministratorEntity adminEntity, IUser discordUser, Action<ContainerBuilder> appendComponents = null!);
-        SelectMenuBuilder GetAdminActionMenuBuilder(string customId, SystemAdministratorEntity targetAdmin, SystemAdministratorEntity requestingAdmin);
-        SelectMenuBuilder GetSystemRoleMenuBuilder(string customId, int currentRoleId, List<SystemRoleEntity> assignableRoles);
-        SelectMenuBuilder GetAdminStatusMenuBuilder(string customId, bool currentState);
-    }
-
     public class DiscordUiService : IDiscordUiService
     {
         private readonly DiscordSocketClient _client;
-        private readonly IApplicationEmoteCache _emoteCache;
+        private readonly IDiscordEmoteService _emoteCache;
 
-        public DiscordUiService(DiscordSocketClient client, IApplicationEmoteCache emoteCache)
+        public DiscordUiService(DiscordSocketClient client, IDiscordEmoteService emoteCache)
         {
             _client = client;
             _emoteCache = emoteCache;
@@ -207,7 +180,7 @@ namespace Client.Services
             return new ModalBuilder().WithTitle("Add Comment").WithCustomId(customId).AddTextInput("Comment", "comment_text", TextInputStyle.Paragraph, "Enter your comment here...", required: true).Build();
         }
 
-        public MessageComponent CreateApiClientOverviewContainer(IntegrationClientEntity client, Action<ContainerBuilder> appendComponents = null!)
+        public MessageComponent CreateApiClientOverviewContainer(IntegrationClients client, Action<ContainerBuilder> appendComponents = null!)
         {
             var bulbIconON = _emoteCache.GetEmote("UI_ICON_BULB_ON");
             var bulbIconOFF = _emoteCache.GetEmote("UI_ICON_BULB_OFF");
@@ -226,7 +199,7 @@ namespace Client.Services
                 """;
 
             string? avatarUrl = _client.CurrentUser?.GetDisplayAvatarUrl() ?? _client.CurrentUser?.GetDefaultAvatarUrl();
-            var containerBuilder = new ContainerBuilder().WithAccentColor(AppColors.Info);
+            var containerBuilder = new ContainerBuilder().WithAccentColor(new Color(AppColors.Info));
 
             if (!string.IsNullOrEmpty(avatarUrl)) containerBuilder.WithSection(new[] { new TextDisplayBuilder($"‎‎‎\n### Manage API Client") }, new ThumbnailBuilder(avatarUrl));
             else containerBuilder.WithTextDisplay($"## Manage API Client");
@@ -273,7 +246,7 @@ namespace Client.Services
                 .AddOption("Disabled", "false", "Client is inactive and will reject requests", isDefault: !currentState, emote: offIcon);
         }
 
-        public MessageComponent CreateTargetOverviewContainer(string clientName, KnownDeliveryTargetEntity target, Action<ContainerBuilder> appendComponents = null!)
+        public MessageComponent CreateTargetOverviewContainer(string clientName, KnownDeliveryTargets target, Action<ContainerBuilder> appendComponents = null!)
         {
             var discordCreatedAtTimestamp = $"<t:{((DateTimeOffset)target.CreatedAtUtc).ToUnixTimeSeconds()}:F>";
             var discordUpdatedAtTimestamp = target.UpdatedAtUtc != null ? $"<t:{((DateTimeOffset)target.UpdatedAtUtc).ToUnixTimeSeconds()}:F>" : "`N/A`";
@@ -338,7 +311,7 @@ namespace Client.Services
                 .AddOption("Disable Auto-Publish", "false", "Messages will NOT be automatically published", isDefault: !currentState, emote: falseIcon);
         }
 
-        public MessageComponent CreateAdminOverviewContainer(SystemAdministratorEntity adminEntity, IUser discordUser, Action<ContainerBuilder> appendComponents = null!)
+        public MessageComponent CreateAdminOverviewContainer(SystemAdministrators adminEntity, IUser discordUser, Action<ContainerBuilder> appendComponents = null!)
         {
             var activeIcon = _emoteCache.GetEmote("UI_ICON_BULB_ON");
             var inactiveIcon = _emoteCache.GetEmote("UI_ICON_BULB_OFF");
@@ -370,7 +343,7 @@ namespace Client.Services
             return new ComponentBuilderV2().WithContainer(containerBuilder).Build();
         }
 
-        public SelectMenuBuilder GetAdminActionMenuBuilder(string customId, SystemAdministratorEntity targetAdmin, SystemAdministratorEntity requestingAdmin)
+        public SelectMenuBuilder GetAdminActionMenuBuilder(string customId, SystemAdministrators targetAdmin, SystemAdministrators requestingAdmin)
         {
             var menuBuilder = new SelectMenuBuilder().WithCustomId(customId).WithPlaceholder("Select an administrative action...");
             bool isSelf = targetAdmin.DiscordUserId == requestingAdmin.DiscordUserId;
@@ -394,7 +367,7 @@ namespace Client.Services
             return menuBuilder;
         }
 
-        public SelectMenuBuilder GetSystemRoleMenuBuilder(string customId, int currentRoleId, List<SystemRoleEntity> assignableRoles)
+        public SelectMenuBuilder GetSystemRoleMenuBuilder(string customId, int currentRoleId, List<SystemRoles> assignableRoles)
         {
             var menuBuilder = new SelectMenuBuilder()
                 .WithCustomId(customId)

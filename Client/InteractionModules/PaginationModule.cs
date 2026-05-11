@@ -1,13 +1,12 @@
-﻿using Client.Contexts;
+﻿using Application.Services.API;
+using Application.Services.Discord;
+using Application.Services.Pagination;
+using Client.Contexts;
 using Client.Models;
 using Client.Security;
 using Client.Services;
-using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System.Threading.Tasks;
 
 namespace Client.InteractionModules
 {

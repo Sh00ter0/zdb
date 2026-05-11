@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-
-namespace Client.Data
+﻿namespace Client.Data
 {
     public static class DbPath
     {

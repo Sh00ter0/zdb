@@ -1,29 +1,14 @@
-﻿using Client.Data;
+﻿using Application.Repositories;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Client.Data.Repositories;
 
-public interface SystemAdministratorRepository
-{
-    Task<SystemAdministratorEntity?> GetByDiscordIdAsync(ulong discordUserId);
-    Task<List<SystemAdministratorEntity>> GetAllAsync();
-    Task<bool> AddAsync(SystemAdministratorEntity entity);
-    Task<bool> IsActiveAsync(ulong discordUserId);
-    Task<bool> UpdateAsync(SystemAdministratorEntity entity);
-    Task<bool> DeleteAsync(ulong discordUserId);
-    Task UpsertSuperAdminAsync(ulong discordUserId, bool isActive = true);
-}
-
 public class BotAdminRepository(
     IDbContextFactory<ApiSecurityDbContext> dbContextFactory,
-    ILogger<BotAdminRepository> logger) : SystemAdministratorRepository
+    ILogger<BotAdminRepository> logger) : ISystemAdministratorRepository
 {
-    public async Task<SystemAdministratorEntity?> GetByDiscordIdAsync(ulong discordUserId)
+    public async Task<SystemAdministrators?> GetByDiscordIdAsync(ulong discordUserId)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync();
 
@@ -35,7 +20,7 @@ public class BotAdminRepository(
             .FirstOrDefaultAsync(a => a.DiscordUserId == discordUserId);
     }
 
-    public async Task<List<SystemAdministratorEntity>> GetAllAsync()
+    public async Task<List<SystemAdministrators>> GetAllAsync()
     {
         await using var db = await dbContextFactory.CreateDbContextAsync();
 
@@ -45,7 +30,7 @@ public class BotAdminRepository(
             .ToListAsync();
     }
 
-    public async Task<bool> AddAsync(SystemAdministratorEntity entity)
+    public async Task<bool> AddAsync(SystemAdministrators entity)
     {
         try
         {
@@ -73,7 +58,7 @@ public class BotAdminRepository(
         return entity?.IsActive ?? false;
     }
 
-    public async Task<bool> UpdateAsync(SystemAdministratorEntity entity)
+    public async Task<bool> UpdateAsync(SystemAdministrators entity)
     {
         try
         {
@@ -125,7 +110,7 @@ public class BotAdminRepository(
             {
                 if (!isActive) return;
 
-                superAdmin = new SystemAdministratorEntity
+                superAdmin = new SystemAdministrators
                 {
                     DiscordUserId = discordUserId,
                     RoleId = 1, // ID 1 to nasz wbudowany (zasiany) Super Administrator

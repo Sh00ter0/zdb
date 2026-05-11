@@ -1,26 +1,11 @@
-﻿using Client.Models;
+﻿using Application.Common.Pagination;
+using Application.Services.Pagination;
 using Discord;
 using Microsoft.Extensions.Caching.Memory;
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace Client.Services
 {
-    public class PaginationSessionData
-    {
-        public string Header { get; set; } = string.Empty;
-        public List<string> Pages { get; set; } = new();
-        public ButtonBuilder? CustomButton { get; set; }
-    }
-
-    public interface IPaginationService
-    {
-        string CreatePaginationSession(string header, string fullText, int charsPerPage = 3500, ButtonBuilder? customButton = null);
-        string CreatePaginationSession(string header, IEnumerable<string> items, int charsPerPage = 3500, string separator = "\n", ButtonBuilder? customButton = null);
-        PaginationSessionData? GetSessionData(string sessionId);
-    }
-
     public class PaginationService : IPaginationService
     {
         private readonly IMemoryCache _cache;
