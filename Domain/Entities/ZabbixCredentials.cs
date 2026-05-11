@@ -1,9 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace Domain.Entities
 {
@@ -14,7 +11,7 @@ namespace Domain.Entities
         public long Id { get; set; }
 
         [Required]
-        
+
         public long AssociatedIntegrationClientId { get; set; }
 
         [Required]
