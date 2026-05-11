@@ -60,16 +60,19 @@ try
     var app = builder.Build();
 
     app.UseForwardedHeaders();
-    app.UseRouting();
 
     app.UseMiddleware<SecureRequestMiddleware>();
     app.UseMiddleware<DiscordStatusMiddleware>();
 
-    app.UseAuthentication();
-    app.UseRateLimiter();
-    app.UseAuthorization();
-    app.MapControllers();
+    app.UseRouting();
 
+    app.UseAuthentication();
+
+    app.UseRateLimiter();
+
+    app.UseAuthorization();
+
+    app.MapControllers();
 
     await app.RunAsync();
 }
