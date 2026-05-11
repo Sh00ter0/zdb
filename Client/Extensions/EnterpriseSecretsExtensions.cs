@@ -7,29 +7,29 @@ namespace Client.Extensions;
 
 public static class EnterpriseSecretsExtensions
 {
-    private static readonly Serilog.ILogger Logger = Log.ForContext(typeof(EnterpriseSecretsExtensions));
-
     public static WebApplicationBuilder AddEnterpriseSecrets(this WebApplicationBuilder builder)
     {
+        var logger = Log.ForContext(typeof(EnterpriseSecretsExtensions));
+
         builder.Configuration.AddEnvironmentVariables(prefix: "DZB_");
 
         var providerString = builder.Configuration.GetValue<string>("SECRET_PROVIDER", "Local");
 
         if (!Enum.TryParse<SecretProviderType>(providerString, true, out var providerType))
         {
-            Logger.Warning("Unknown secret provider '{Provider}'. Falling back to Local settings.", providerString);
+            logger.Warning("Unknown secret provider '{Provider}'. Falling back to Local settings.", providerString);
             providerType = SecretProviderType.Local;
         }
 
-        Logger.Information("Secret Management Engine: Initializing '{ProviderType}' provider...", providerType);
+        logger.Information("Secret Management Engine: Initializing '{ProviderType}' provider...", providerType);
         switch (providerType)
         {
             case SecretProviderType.Local:
-                Logger.Information("Using Local/Environment based secret provider.");
+                logger.Information("Using Local/Environment based secret provider.");
                 break;
 
             case SecretProviderType.HashiCorpVault:
-                ApplyVaultConfiguration(builder);
+                ApplyVaultConfiguration(builder, logger);
                 break;
 
             default:
@@ -39,7 +39,7 @@ public static class EnterpriseSecretsExtensions
         return builder;
     }
 
-    private static void ApplyVaultConfiguration(WebApplicationBuilder builder)
+    private static void ApplyVaultConfiguration(WebApplicationBuilder builder, Serilog.ILogger logger)
     {
         var config = builder.Configuration;
 
@@ -59,10 +59,10 @@ public static class EnterpriseSecretsExtensions
         {
             if (bypassSsl)
             {
-                Logger.Warning("SECURITY WARNING: Vault SSL certificate validation is DISABLED (Bypass active).");
+                logger.Warning("SECURITY WARNING: Vault SSL certificate validation is DISABLED (Bypass active).");
             }
 
-            Logger.Information(
+            logger.Information(
                 "Connecting to Vault at '{VaultAddress}' using mount '{MountPoint}' and root path '{RootPath}'.",
                 vaultAddr, mountPoint, rootPath);
 
@@ -76,7 +76,7 @@ public static class EnterpriseSecretsExtensions
                 rootPath!,
                 mountPoint);
 
-            Logger.Information("HashiCorp Vault configuration provider successfully initialized.");
+            logger.Information("HashiCorp Vault configuration provider successfully initialized.");
         }
         catch (Exception ex)
         {
