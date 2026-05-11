@@ -1,4 +1,4 @@
 # Zabbix Discord-Bridge (ZDB)
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam ultrices lacus non convallis tincidunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus hendrerit libero nisi, sed aliquet libero sodales sed. Suspendisse ac mi et lacus accumsan faucibus. Curabitur lobortis suscipit turpis, quis dignissim nunc suscipit vel. Suspendisse imperdiet quam sit amet erat bibendum posuere. Vestibulum rutrum nulla ante, vitae convallis sapien faucibus sit amet. Fusce mauris lacus, iaculis in dictum ut, pretium sit amet ante. Curabitur interdum justo in facilisis imperdiet. Duis lacinia ex eget pellentesque interdum. Donec justo urna, finibus eu augue in, facilisis convallis dui. Sed eu tortor ante. Fusce ac dictum neque, vitae dignissim tellus.
 ---
-![GitHub License](https://img.shields.io/github/license/Sh00ter0/zdb)
+[![.NET 10 Build and Test](https://github.com/Sh00ter0/zdb/actions/workflows/dotnet.yml/badge.svg)](https://github.com/Sh00ter0/zdb/actions/workflows/dotnet.yml) ![GitHub License](https://img.shields.io/github/license/Sh00ter0/zdb)
