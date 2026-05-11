@@ -1,0 +1,21 @@
+{
+  "profiles": {
+    "Client": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "externalUrlConfiguration": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DZB_SECRET_PROVIDER": "HashiCorpVault", // Or Local
+        "DZB_VAULT_ADDR": "https://evilcorp.com:8700",
+        "DZB_VAULT_ROLE_ID": "role_id",
+        "DZB_VAULT_SECRET_ID": "secret_id",
+        "DZB_VAULT_BYPASS_SSL": "false",
+        "DZB_VAULT_MOUNT_POINT": "mount_point",
+        "DZB_VAULT_ROOT_PATH": "path"
+
+      },
+      "applicationUrl": ""
+    }
+  }
+}

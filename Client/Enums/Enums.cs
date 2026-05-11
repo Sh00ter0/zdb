@@ -5,6 +5,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Client.Enums
 {
+    public enum SecretProviderType
+    {
+        Local,
+        HashiCorpVault
+    }
     public enum TextChannelType
     {
         [DiscordSelectOption(label: "Unknown")]
