@@ -62,7 +62,7 @@ public class InteractionHandler(
                 {
                     logger.LogInformation("Discord client is ready. Verifying modules and registering commands...");
 
-                    await emoteCache.RefreshCacheAsync();
+                    await emoteCache.SynchronizeEmotesAsync();
 
                     await handler.AddModulesAsync(Assembly.GetEntryAssembly(), services);
                     logger.LogDebug("Successfully loaded all interaction modules into the service.");
