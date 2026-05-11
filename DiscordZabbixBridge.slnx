@@ -3,4 +3,5 @@
   <Project Path="Client/Client.csproj" />
   <Project Path="Domain/Domain.csproj" />
   <Project Path="Key.Generator/Key.Generator.csproj" />
+  <Project Path="Tests/Tests.csproj" Id="2ac60d9d-5ebf-4267-af94-ebffe179d2f3" />
 </Solution>
