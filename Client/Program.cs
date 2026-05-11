@@ -68,8 +68,11 @@ try
 
     app.UseForwardedHeaders();
 
-    app.UseMiddleware<SecureRequestMiddleware>();
-    app.UseMiddleware<DiscordStatusMiddleware>();
+    if (!app.Environment.IsEnvironment("Testing"))
+    {
+        app.UseMiddleware<SecureRequestMiddleware>();
+        app.UseMiddleware<DiscordStatusMiddleware>();
+    }
 
     app.UseRouting();
     app.UseAuthentication();
@@ -217,3 +220,5 @@ internal static class HostingExtensions
         return services;
     }
 }
+// xUnit
+public partial class Program { }
