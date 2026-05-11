@@ -63,13 +63,13 @@ try
     app.UseRouting();
 
     app.UseMiddleware<SecureRequestMiddleware>();
+    app.UseMiddleware<DiscordStatusMiddleware>();
 
     app.UseAuthentication();
     app.UseRateLimiter();
     app.UseAuthorization();
     app.MapControllers();
 
-    app.UseMiddleware<DiscordStatusMiddleware>();
 
     await app.RunAsync();
 }
