@@ -1,5 +1,6 @@
 ﻿using Client.Data;
 using Client.Data.Repositories;
+using Client.Extensions;
 using Client.Handlers;
 using Client.Middleware;
 using Client.Models;
@@ -21,7 +22,6 @@ using Serilog.Sinks.SystemConsole.Themes;
 using System.Net;
 using System.Threading.RateLimiting;
 
-// Serilog bootstrap logger
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -37,8 +37,6 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-
-    // Serilog Configuration
     builder.Host.UseSerilog((context, services, configuration) => configuration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
@@ -47,7 +45,7 @@ try
             outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}",
             theme: AnsiConsoleTheme.Code));
 
-    builder.Configuration.AddEnvironmentVariables(prefix: "DZB_");
+    builder.AddEnterpriseSecrets();
 
     HostingExtensions.ValidateRequiredSecrets(builder.Configuration);
 
@@ -62,17 +60,15 @@ try
     builder.Services.AddHostedService<StartupService>();
 
     var app = builder.Build();
+
     app.UseForwardedHeaders();
 
     app.UseMiddleware<SecureRequestMiddleware>();
     app.UseMiddleware<DiscordStatusMiddleware>();
 
     app.UseRouting();
-
     app.UseAuthentication();
-
     app.UseRateLimiter();
-
     app.UseAuthorization();
 
     app.MapControllers();
@@ -115,7 +111,7 @@ internal static class HostingExtensions
         if (missingSecrets.Count > 0)
         {
             throw new InvalidOperationException(
-                "Missing required production secrets. Configure them using environment variables: " +
+                "Missing required production secrets. Configure them in Vault or environment variables: " +
                 string.Join("; ", missingSecrets));
         }
     }
@@ -130,7 +126,7 @@ internal static class HostingExtensions
 
     private static string MissingConfigMessage(string configPath, string environmentVariable)
     {
-        return $"{configPath} must be provided. Expected environment variable: {environmentVariable}";
+        return $"{configPath} must be provided. Source: Vault or ENV: {environmentVariable}";
     }
 
     public static IServiceCollection AddApplicationInfrastructure(this IServiceCollection services, AppApiConfig apiConfig, string masterKey)
@@ -143,15 +139,12 @@ internal static class HostingExtensions
             Directory.CreateDirectory(dbDirectory);
         }
 
-        // Using DbContextFactory to allow scoped DbContext in singleton services
         services.AddDbContextFactory<ApiSecurityDbContext>(opts => opts.UseSqlite($"Data Source={databasePath}"));
 
-        // Discord Client and Interaction Service
         services.AddSingleton(new DiscordSocketConfig { GatewayIntents = GatewayIntents.DirectMessages, AlwaysDownloadUsers = false, ConnectionTimeout = 30000, LogLevel = LogSeverity.Verbose });
         services.AddSingleton<DiscordSocketClient>();
         services.AddSingleton(sp => new InteractionService(sp.GetRequiredService<DiscordSocketClient>(), new InteractionServiceConfig { DefaultRunMode = Discord.Interactions.RunMode.Async }));
 
-        // 3. Application Services
         services.AddMemoryCache();
         services.AddSingleton<InteractionHandler>();
         services.AddSingleton<IApiSecurityStore, ApiSecurityStore>();
@@ -165,7 +158,6 @@ internal static class HostingExtensions
         services.AddSingleton<IDiscordTargetSyncService, DiscordTargetSyncService>();
         services.AddSingleton<IApplicationEmoteCache, ApplicationEmoteCache>();
 
-        // Data Repositories
         services.AddSingleton<IntegrationClientRepository, ApiClientRepository>();
         services.AddSingleton<KnownDeliveryTargetRepository, ApiTargetRepository>();
         services.AddSingleton<SystemAdministratorRepository, BotAdminRepository>();
@@ -173,7 +165,6 @@ internal static class HostingExtensions
         services.AddControllers();
         services.AddOpenApi();
 
-        //Authorization handler
         services.AddHttpContextAccessor();
         services.AddSingleton<IAuthorizationHandler, TargetAccessHandler>();
 
@@ -190,7 +181,7 @@ internal static class HostingExtensions
         services.AddAuthorization(opts => {
             opts.AddPolicy(Policy.ZabbixIngress, policy => policy.AddAuthenticationSchemes(apiKeyScheme).RequireAuthenticatedUser());
             opts.AddPolicy(Policy.TargetAccess, policy => policy.RequireAuthenticatedUser().AddRequirements(new TargetAccessRequirement()));
-            });
+        });
 
         services.Configure<ForwardedHeadersOptions>(opts =>
         {
