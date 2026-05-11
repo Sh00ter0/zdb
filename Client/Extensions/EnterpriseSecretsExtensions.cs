@@ -11,6 +11,8 @@ namespace Client.Extensions;
 
 public static class EnterpriseSecretsExtensions
 {
+    private static readonly Serilog.ILogger Logger = Log.ForContext(typeof(EnterpriseSecretsExtensions));
+
     public static WebApplicationBuilder AddEnterpriseSecrets(this WebApplicationBuilder builder)
     {
         builder.Configuration.AddEnvironmentVariables(prefix: "DZB_");
@@ -19,16 +21,15 @@ public static class EnterpriseSecretsExtensions
 
         if (!Enum.TryParse<SecretProviderType>(providerString, true, out var providerType))
         {
-            Log.Warning("Unknown secret provider '{Provider}'. Falling back to Local settings.", providerString);
+            Logger.Warning("Unknown secret provider '{Provider}'. Falling back to Local settings.", providerString);
             providerType = SecretProviderType.Local;
         }
 
-        Log.Information("Secret Management Engine: Initializing '{ProviderType}' provider...", providerType);
-
+        Logger.Information("Secret Management Engine: Initializing '{ProviderType}' provider...", providerType);
         switch (providerType)
         {
             case SecretProviderType.Local:
-                Log.Information("Using Local/Environment based secret provider.");
+                Logger.Information("Using Local/Environment based secret provider.");
                 break;
 
             case SecretProviderType.HashiCorpVault:
@@ -62,10 +63,10 @@ public static class EnterpriseSecretsExtensions
         {
             if (bypassSsl)
             {
-                Log.Warning("SECURITY WARNING: Vault SSL certificate validation is DISABLED (Bypass active).");
+                Logger.Warning("SECURITY WARNING: Vault SSL certificate validation is DISABLED (Bypass active).");
             }
 
-            Log.Information(
+            Logger.Information(
                 "Connecting to Vault at '{VaultAddress}' using mount '{MountPoint}' and root path '{RootPath}'.",
                 vaultAddr, mountPoint, rootPath);
 
@@ -79,7 +80,7 @@ public static class EnterpriseSecretsExtensions
                 rootPath!,
                 mountPoint);
 
-            Log.Information("HashiCorp Vault configuration provider successfully initialized.");
+            Logger.Information("HashiCorp Vault configuration provider successfully initialized.");
         }
         catch (Exception ex)
         {

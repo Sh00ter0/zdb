@@ -141,6 +141,7 @@
     <Content Include="Assets\Emotes\UI_ICON_X.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="properties\launchSettings.example.json" />
   </ItemGroup>
 
   <ItemGroup>
