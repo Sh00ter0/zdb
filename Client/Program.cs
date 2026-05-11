@@ -58,7 +58,6 @@ try
     builder.Services.AddHostedService<StartupService>();
 
     var app = builder.Build();
-
     app.UseForwardedHeaders();
 
     app.UseMiddleware<SecureRequestMiddleware>();
@@ -163,9 +162,9 @@ internal static class HostingExtensions
         services.AddSingleton<IApplicationEmoteCache, ApplicationEmoteCache>();
 
         // Data Repositories
-        services.AddSingleton<IApiClientRepository, ApiClientRepository>();
-        services.AddSingleton<IApiTargetRepository, ApiTargetRepository>();
-        services.AddSingleton<IBotAdminRepository, BotAdminRepository>();
+        services.AddSingleton<IntegrationClientRepository, ApiClientRepository>();
+        services.AddSingleton<KnownDeliveryTargetRepository, ApiTargetRepository>();
+        services.AddSingleton<SystemAdministratorRepository, BotAdminRepository>();
 
         services.AddControllers();
         services.AddOpenApi();

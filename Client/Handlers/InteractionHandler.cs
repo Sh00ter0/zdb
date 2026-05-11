@@ -10,11 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Client.Handlers; // File-scoped namespace
+namespace Client.Handlers;
 
 public class InteractionHandler(
     DiscordSocketClient client,
@@ -34,47 +33,6 @@ public class InteractionHandler(
         handler.Log += LogAsync;
         client.InteractionCreated += HandleInteraction;
         handler.InteractionExecuted += HandleInteractionExecute;
-    }
-
-    private async Task RegisterNormalModulesAsync()
-    {
-        var moduleTypes = Assembly.GetEntryAssembly()!
-            .DefinedTypes
-            .Where(type => IsInteractionModule(type.AsType())
-                           && !type.IsAbstract
-                           && type.DeclaringType == null)
-            .Select(type => type.AsType());
-
-        foreach (var moduleType in moduleTypes)
-        {
-            try
-            {
-                await handler.AddModuleAsync(moduleType, services);
-                logger.LogDebug("Successfully registered interaction module: {ModuleName}", moduleType.Name);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to register interaction module: {ModuleName}", moduleType.Name);
-                throw;
-            }
-        }
-    }
-
-    private static bool IsInteractionModule(Type candidateType)
-    {
-        var currentType = candidateType;
-        while (currentType != null)
-        {
-            if (currentType.IsGenericType &&
-                currentType.GetGenericTypeDefinition() == typeof(InteractionModuleBase<>))
-            {
-                return true;
-            }
-
-            currentType = currentType.BaseType;
-        }
-
-        return false;
     }
 
     private Task LogAsync(LogMessage log)
@@ -104,12 +62,14 @@ public class InteractionHandler(
                 {
                     logger.LogInformation("Discord client is ready. Verifying modules and registering commands...");
 
-                    await emoteCache.RefreshCacheAsync();
-                    await RegisterNormalModulesAsync();
+                    await emoteCache.SynchronizeEmotesAsync();
+
+                    await handler.AddModulesAsync(Assembly.GetEntryAssembly(), services);
+                    logger.LogDebug("Successfully loaded all interaction modules into the service.");
 
                     await handler.RegisterCommandsGloballyAsync(deleteMissing: true);
 
-                    _commandsRegistered = true; // Zabezpieczamy przed spamowaniem przy reconnectach
+                    _commandsRegistered = true;
                     logger.LogInformation("Application commands registered successfully.");
                 }
                 else
@@ -133,7 +93,7 @@ public class InteractionHandler(
             try
             {
                 using var scope = services.CreateScope();
-                var adminRepo = scope.ServiceProvider.GetRequiredService<IBotAdminRepository>();
+                var adminRepo = scope.ServiceProvider.GetRequiredService<SystemAdministratorRepository>();
 
                 var adminEntity = await adminRepo.GetByDiscordIdAsync(interaction.User.Id);
                 var context = new AppInteractionContext(client, interaction, adminEntity);

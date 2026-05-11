@@ -24,9 +24,9 @@ namespace Client.Security
     {
         private const string ApiKeyPrefix = "zdb";
 
-        private readonly IApiClientRepository _apiClientRepository;
-        private readonly IApiTargetRepository _apiTargetRepository;
-        private readonly IBotAdminRepository _botAdminRepository;
+        private readonly IntegrationClientRepository _apiClientRepository;
+        private readonly KnownDeliveryTargetRepository _apiTargetRepository;
+        private readonly SystemAdministratorRepository _botAdminRepository;
 
         private readonly IDbContextFactory<ApiSecurityDbContext> _dbContextFactory;
         private readonly IEncryptionService _encryptionService;
@@ -34,9 +34,9 @@ namespace Client.Security
         private readonly byte[] _apiKeyHashPepperBytes;
 
         public ApiSecurityStore(
-            IApiClientRepository apiClientRepository,
-            IApiTargetRepository apiTargetRepository,
-            IBotAdminRepository botAdminRepository,
+            IntegrationClientRepository apiClientRepository,
+            KnownDeliveryTargetRepository apiTargetRepository,
+            SystemAdministratorRepository botAdminRepository,
             IDbContextFactory<ApiSecurityDbContext> dbContextFactory,
             IEncryptionService encryptionService,
             IOptions<AppApiConfig> apiConfig,
@@ -67,7 +67,7 @@ namespace Client.Security
                 await dbContext.Database.MigrateAsync();
                 _logger.LogDebug("Database migrations applied successfully.");
 
-                var testRecord = await dbContext.ZabbixCredentials.AsNoTracking().FirstOrDefaultAsync();
+                var testRecord = await dbContext.ZabbixCredentials.AsNoTracking().OrderBy(x => x.Id).FirstOrDefaultAsync();
 
                 if (testRecord != null)
                 {

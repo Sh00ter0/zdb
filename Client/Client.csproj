@@ -10,6 +10,140 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\Emotes\UI_ICON_ACTIVE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_BULB_OFF.png" />
+    <None Remove="Assets\Emotes\UI_ICON_BULB_ON.png" />
+    <None Remove="Assets\Emotes\UI_ICON_CHECK.png" />
+    <None Remove="Assets\Emotes\UI_ICON_CHECK_WHITE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_GITHUB_WHITE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_INACTIVE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_KEY.png" />
+    <None Remove="Assets\Emotes\UI_ICON_LIST.png" />
+    <None Remove="Assets\Emotes\UI_ICON_PAPER_PLANE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_PEN.png" />
+    <None Remove="Assets\Emotes\UI_ICON_PERM_READ.png" />
+    <None Remove="Assets\Emotes\UI_ICON_PERM_WRITE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_PLUG.png" />
+    <None Remove="Assets\Emotes\UI_ICON_POWER.png" />
+    <None Remove="Assets\Emotes\UI_ICON_PULSE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_REFRESH.png" />
+    <None Remove="Assets\Emotes\UI_ICON_SEVERITY_AVERAGE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_SEVERITY_DISASTER.png" />
+    <None Remove="Assets\Emotes\UI_ICON_SEVERITY_HIGH.png" />
+    <None Remove="Assets\Emotes\UI_ICON_SEVERITY_INFORMATION.png" />
+    <None Remove="Assets\Emotes\UI_ICON_SEVERITY_NOT_CLASSIFIED.png" />
+    <None Remove="Assets\Emotes\UI_ICON_SEVERITY_WARNING.png" />
+    <None Remove="Assets\Emotes\UI_ICON_SHIELD_CHECK.png" />
+    <None Remove="Assets\Emotes\UI_ICON_TRASH.png" />
+    <None Remove="Assets\Emotes\UI_ICON_TRASH_RED.png" />
+    <None Remove="Assets\Emotes\UI_ICON_TRASH_WHITE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_UNDO.png" />
+    <None Remove="Assets\Emotes\UI_ICON_UNDO_WHITE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_USER_FILE.png" />
+    <None Remove="Assets\Emotes\UI_ICON_USER_LOCK.png" />
+    <None Remove="Assets\Emotes\UI_ICON_X.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Emotes\UI_ICON_ACTIVE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_BULB_OFF.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_BULB_ON.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_CHECK.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_CHECK_WHITE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_GITHUB_WHITE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_INACTIVE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_KEY.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_LIST.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_PAPER_PLANE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_PEN.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_PERM_READ.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_PERM_WRITE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_PLUG.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_POWER.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_PULSE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_REFRESH.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_SEVERITY_AVERAGE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_SEVERITY_DISASTER.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_SEVERITY_HIGH.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_SEVERITY_INFORMATION.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_SEVERITY_NOT_CLASSIFIED.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_SEVERITY_WARNING.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_SHIELD_CHECK.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_TRASH.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_TRASH_RED.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_TRASH_WHITE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_UNDO.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_UNDO_WHITE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_USER_FILE.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_USER_LOCK.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Emotes\UI_ICON_X.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Discord.Net" Version="3.19.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
       <PrivateAssets>all</PrivateAssets>

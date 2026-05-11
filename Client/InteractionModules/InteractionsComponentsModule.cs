@@ -29,8 +29,8 @@ namespace Client.InteractionModules
         {
             private readonly ILogger<ClientCommandsGroup> _logger;
             private readonly IApiSecurityStore _apiSecurityStore;
-            private readonly IApiClientRepository _apiClientRepository;
-            private readonly IApiTargetRepository _targetRepository;
+            private readonly IntegrationClientRepository _apiClientRepository;
+            private readonly KnownDeliveryTargetRepository _targetRepository;
             private readonly IDiscordUiService _discordUiService;
             private readonly IPaginationService _paginationService;
             private readonly IApplicationEmoteCache _emoteCache;
@@ -38,8 +38,8 @@ namespace Client.InteractionModules
             public ClientCommandsGroup(
                 ILogger<ClientCommandsGroup> logger,
                 IApiSecurityStore apiSecurityStore,
-                IApiClientRepository apiClientRepository,
-                IApiTargetRepository targetRepository,
+                IntegrationClientRepository apiClientRepository,
+                KnownDeliveryTargetRepository targetRepository,
                 IDiscordUiService discordUiService,
                 IPaginationService paginationService,
                 IApplicationEmoteCache emoteCacheService)
@@ -62,14 +62,17 @@ namespace Client.InteractionModules
 
                 try
                 {
+                    var isValidUrl = zabbixApiUrl.IsValidHttpOrHttpsUrl();
+                    if (!isValidUrl) throw new UserVisibleException("The provided Zabbix API URL is not valid. Please ensure it starts with http:// or https:// and is properly formatted.");
+
                     var createdClient = await _apiSecurityStore.CreateApiClientAsync(clientName, zabbixApiUrl, zabbixApiToken);
 
                     var bodyText = $"""
-                                    **Client name:** {createdClient.Name}
-                                    **Zabbix API URL:** {zabbixApiUrl}
+                                    **Client name:** `{createdClient.Name}`
+                                    **Zabbix API URL:** `{zabbixApiUrl}`
                                     **API key:** `{createdClient.ApiKey}`
                                     
-                                    **Important:** Copy and store this key now. It is only shown once.
+                                    ⚠️ **Warning!:** Copy and store this key now. It is only shown once.
                                     """;
 
                     var components = _discordUiService.CreateStandardContainer(header: "API key created", accentColor: null, body: bodyText);
@@ -343,6 +346,10 @@ namespace Client.InteractionModules
             {
                 await DeferAsync(ephemeral: true);
 
+                var isValidUrl = modal.Url.IsValidHttpOrHttpsUrl();
+
+                if (!isValidUrl) throw new UserVisibleException("The provided Zabbix API URL is not valid. Please ensure it starts with http:// or https:// and is properly formatted.");
+
                 await _apiSecurityStore.UpdateZabbixConnectionAsync(clientId, modal.Url, modal.Token);
 
                 var client = await _apiClientRepository.GetByIdAsync(clientId);
@@ -388,7 +395,7 @@ namespace Client.InteractionModules
 
                 var deletedComponents = _discordUiService.CreateStandardContainer(
                     header: "Client Removed",
-                    body: $"The API client (ID: `{clientId}`) has been permanently removed.",
+                    body: $"Api client has been permanently removed.",
                     accentColor: Color.Red);
 
                 await ((IComponentInteraction)Context.Interaction).UpdateAsync(msg => msg.Components = deletedComponents);
@@ -400,8 +407,8 @@ namespace Client.InteractionModules
         {
             private readonly ILogger<WellKnownTargetsCommandsGroup> _logger;
             private readonly IApiSecurityStore _apiSecurityStore;
-            private readonly IApiClientRepository _apiClientRepository;
-            private readonly IApiTargetRepository _targetRepository;
+            private readonly IntegrationClientRepository _apiClientRepository;
+            private readonly KnownDeliveryTargetRepository _targetRepository;
             private readonly IDiscordUiService _discordUiService;
             private readonly IPaginationService _paginationService;
             private readonly IDiscordTargetSyncService _syncService;
@@ -410,8 +417,8 @@ namespace Client.InteractionModules
             public WellKnownTargetsCommandsGroup(
                 ILogger<WellKnownTargetsCommandsGroup> logger,
                 IApiSecurityStore apiSecurityStore,
-                IApiClientRepository apiClientRepository,
-                IApiTargetRepository targetRepository,
+                IntegrationClientRepository apiClientRepository,
+                KnownDeliveryTargetRepository targetRepository,
                 IDiscordUiService discordUiService,
                 IPaginationService paginationService,
                 IDiscordTargetSyncService syncService,
@@ -523,9 +530,9 @@ namespace Client.InteractionModules
 
                 var bodyText = $"""
                                 **Client name:** {clientName}
-                                **Friendly Name:** {friendlyName}
+                                **Name:** `{friendlyName}`
                                 **Discord target ID:** `{targetId}`
-                                **Type:** `{type}`
+                                **Type:** `{type.GetDiscordLabel()}`
                                 **Auto-Crosspost:** `{autoCrosspost}`
                                 """;
 
@@ -792,7 +799,7 @@ namespace Client.InteractionModules
 
                 var deletedComponents = _discordUiService.CreateStandardContainer(
                     header: "Target Removed",
-                    body: $"The target `{targetDiscordId}` has been permanently removed from client `{clientName}`.",
+                    body: $"The target has been permanently removed from client `{clientName}`.",
                     accentColor: Color.Red);
 
                 await ((IComponentInteraction)Context.Interaction).UpdateAsync(msg => msg.Components = deletedComponents);
@@ -807,7 +814,7 @@ namespace Client.InteractionModules
         public class AdministrationCommandsGroup : InteractionModuleBase<AppInteractionContext>
         {
             private readonly ILogger<AdministrationCommandsGroup> _logger;
-            private readonly IBotAdminRepository _adminRepository;
+            private readonly SystemAdministratorRepository _adminRepository;
             private readonly IDiscordUiService _discordUiService;
             private readonly IPaginationService _paginationService;
             private readonly IApplicationEmoteCache _emoteCache;
@@ -815,7 +822,7 @@ namespace Client.InteractionModules
 
             public AdministrationCommandsGroup(
                 ILogger<AdministrationCommandsGroup> logger,
-                IBotAdminRepository adminRepository,
+                SystemAdministratorRepository adminRepository,
                 IDiscordUiService discordUiService,
                 IPaginationService paginationService,
                 IApplicationEmoteCache emoteCache,
@@ -923,17 +930,17 @@ namespace Client.InteractionModules
                 foreach (var item in sortedAdmins)
                 {
                     string usernameDisplay = item.DiscordUser != null ? $"**{item.DiscordUser.Username}**" : $"*Unknown User*";
-                    string statusIcon = item.Entity.IsActive ? "🟢" : "🔴";
+                    IEmote statusIcon = item.Entity.IsActive ? _emoteCache.GetEmote(IsActive.True.GetDiscordEmote())! : _emoteCache.GetEmote(IsActive.False.GetDiscordEmote())!;
                     string discordCreatedAtTimestamp = $"<t:{((DateTimeOffset)item.Entity.CreatedAtUtc).ToUnixTimeSeconds()}:F>";
                     string discordUpdatedAtTimestamp = item.Entity.UpdatedAtUtc.HasValue ? $"<t:{((DateTimeOffset)item.Entity.UpdatedAtUtc.Value).ToUnixTimeSeconds()}:F>" : "`N/A`";
 
                     var bodyText = $"""
                         {usernameDisplay} (`{item.Entity.DiscordUserId}`)
-                        -# ├ **Role:** `{item.Entity.Role.Name}` *(Weight: {item.Entity.Role.HierarchyWeight})*
-                        -# ├ **Status:** {statusIcon} {(item.Entity.IsActive ? "Active" : "Disabled")}
-                        -# ├ **Protected:** {(item.Entity.IsSystemManaged ? "Yes" : "No")}
-                        -# ├ **CreatedAt:** {discordCreatedAtTimestamp}
-                        -# └ **UpdatedAt:** {discordUpdatedAtTimestamp}
+                        ├ **Role:** `{item.Entity.Role.Name}`
+                        ├ **Status:** {statusIcon} {(item.Entity.IsActive ? "Active" : "Disabled")}
+                        ├ **Protected:** {(item.Entity.IsSystemManaged ? "Yes" : "No")}
+                        ├ **CreatedAt:** {discordCreatedAtTimestamp}
+                        └ **UpdatedAt:** {discordUpdatedAtTimestamp}
                         """;
                     items.Add(bodyText);
                 }
@@ -1162,8 +1169,8 @@ namespace Client.InteractionModules
     {
         private readonly ILogger<ClientCommandsGroup> _logger;
         private readonly IApiSecurityStore _apiSecurityStore;
-        private readonly IApiClientRepository _apiClientRepository;
-        private readonly IApiTargetRepository _targetRepository;
+        private readonly IntegrationClientRepository _apiClientRepository;
+        private readonly KnownDeliveryTargetRepository _targetRepository;
         private readonly IDiscordUiService _discordUiService;
         private readonly IPaginationService _paginationService;
         private readonly IApplicationEmoteCache _emoteCache;
@@ -1172,8 +1179,8 @@ namespace Client.InteractionModules
         public ZabbixDirectMessageComponents(
             ILogger<ClientCommandsGroup> logger,
             IApiSecurityStore apiSecurityStore,
-            IApiClientRepository apiClientRepository,
-            IApiTargetRepository targetRepository,
+            IntegrationClientRepository apiClientRepository,
+            KnownDeliveryTargetRepository targetRepository,
             IDiscordUiService discordUiService,
             IPaginationService paginationService,
             IApplicationEmoteCache emoteCache,

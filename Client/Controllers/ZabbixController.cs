@@ -24,8 +24,8 @@ namespace Client.Controllers
         private const string ErrorIdPrefix = "DZB";
 
         private readonly DiscordSocketClient _client;
-        private readonly IApiClientRepository _clientRepository;
-        private readonly IApiTargetRepository _targetRepository;
+        private readonly IntegrationClientRepository _clientRepository;
+        private readonly KnownDeliveryTargetRepository _targetRepository;
         private readonly DiscordStateService _stateService;
         private readonly IDiscordTargetSyncService _targetSyncService;
         private readonly IDiscordUiService _discordUiService;
@@ -33,8 +33,8 @@ namespace Client.Controllers
 
         public ZabbixController(
             DiscordSocketClient client,
-            IApiClientRepository clientRepository,
-            IApiTargetRepository targetRepository,
+            IntegrationClientRepository clientRepository,
+            KnownDeliveryTargetRepository targetRepository,
             DiscordStateService stateService,
             IDiscordTargetSyncService targetSyncService,
             IDiscordUiService discordUiService,

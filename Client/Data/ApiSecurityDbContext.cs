@@ -41,14 +41,12 @@ public class ApiSecurityDbContext(DbContextOptions<ApiSecurityDbContext> options
             .WithMany(p => p.RolePermissions)
             .HasForeignKey(rp => rp.PermissionId);
 
-        // Defining roles with hierarchy weights to establish a clear permission structure
         modelBuilder.Entity<SystemRoleEntity>().HasData(
             new SystemRoleEntity { Id = 1, Name = "Super Administrator", HierarchyWeight = 1000 },
             new SystemRoleEntity { Id = 2, Name = "Administrator", HierarchyWeight = 500 },
             new SystemRoleEntity { Id = 3, Name = "Moderator", HierarchyWeight = 100 }
         );
 
-        // Defining permissions with specific ID ranges for better organization and future expansion
         modelBuilder.Entity<PermissionEntity>().HasData(
             // Range 1-99: Root permissions
             new PermissionEntity { Id = 1, Key = "root", Description = "Root permission" },

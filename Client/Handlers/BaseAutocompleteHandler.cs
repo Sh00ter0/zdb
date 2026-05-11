@@ -20,7 +20,7 @@ public abstract class BaseAutocompleteHandler : AutocompleteHandler
     {
         try
         {
-            var apiBotAdminRepository = services.GetRequiredService<IBotAdminRepository>();
+            var apiBotAdminRepository = services.GetRequiredService<SystemAdministratorRepository>();
 
             if (!await apiBotAdminRepository.IsActiveAsync(context.User.Id))
             {

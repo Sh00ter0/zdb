@@ -176,4 +176,5 @@ namespace Client.Models
         public List<string> Pages { get; set; } = new();
         public ButtonBuilder? CustomButton { get; set; }
     }
+
 }

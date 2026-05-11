@@ -10,7 +10,7 @@ namespace Client.Services;
 /// <summary>
 /// </summary>
 public class FirstRunAdminSetupService(
-    IBotAdminRepository adminRepository,
+    SystemAdministratorRepository adminRepository,
     DiscordSocketClient discordClient,
     ILogger<FirstRunAdminSetupService> logger)
 {

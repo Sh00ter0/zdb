@@ -2,7 +2,7 @@
 
 namespace Client.Data.Repositories
 {
-    public interface IApiClientRepository
+    public interface IntegrationClientRepository
     {
         Task<IntegrationClientEntity?> GetByIdAsync(long id);
         Task<IntegrationClientEntity?> GetByNameAsync(string name);
@@ -13,7 +13,7 @@ namespace Client.Data.Repositories
         Task<bool> DeleteAsync(long id);
     }
 
-    public class ApiClientRepository : IApiClientRepository
+    public class ApiClientRepository : IntegrationClientRepository
     {
         private readonly IDbContextFactory<ApiSecurityDbContext> _dbContextFactory;
         private readonly ILogger<ApiClientRepository> _logger;

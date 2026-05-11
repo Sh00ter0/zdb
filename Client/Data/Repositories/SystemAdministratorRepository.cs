@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Client.Data.Repositories;
 
-public interface IBotAdminRepository
+public interface SystemAdministratorRepository
 {
     Task<SystemAdministratorEntity?> GetByDiscordIdAsync(ulong discordUserId);
     Task<List<SystemAdministratorEntity>> GetAllAsync();
@@ -21,7 +21,7 @@ public interface IBotAdminRepository
 
 public class BotAdminRepository(
     IDbContextFactory<ApiSecurityDbContext> dbContextFactory,
-    ILogger<BotAdminRepository> logger) : IBotAdminRepository
+    ILogger<BotAdminRepository> logger) : SystemAdministratorRepository
 {
     public async Task<SystemAdministratorEntity?> GetByDiscordIdAsync(ulong discordUserId)
     {
