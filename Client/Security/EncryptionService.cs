@@ -1,14 +1,9 @@
-﻿using System.Security.Cryptography;
+﻿using Application.Common.API;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Client.Security
 {
-    public interface IEncryptionService
-    {
-        string Encrypt(string plainText);
-        string Decrypt(string cipherText);
-    }
-
     public class EncryptionService : IEncryptionService
     {
         private const string AeadPrefix = "v2:";

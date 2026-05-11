@@ -1,32 +1,23 @@
-﻿using Client.Data;
-using Client.Data.Repositories;
+﻿using Application.Common.API;
+using Application.Repositories;
+using Application.Services.API;
+using Client.Data;
 using Client.Models;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Client.Security
 {
-    public interface IApiSecurityStore
-    {
-        Task InitializeAsync();
-        Task<ApiClientValidationResult?> ValidateApiKeyAsync(string apiKey);
-        Task<ApiClientCreationResult> CreateApiClientAsync(string name, string zabbixApiUrl, string zabbixApiToken);
-        Task<string> RenewApiKeyAsync(long clientId);
-        Task UpdateZabbixConnectionAsync(long clientId, string newUrl, string newToken);
-    }
-
     public class ApiSecurityStore : IApiSecurityStore
     {
         private const string ApiKeyPrefix = "zdb";
 
-        private readonly IntegrationClientRepository _apiClientRepository;
-        private readonly KnownDeliveryTargetRepository _apiTargetRepository;
-        private readonly SystemAdministratorRepository _botAdminRepository;
+        private readonly IIntegrationClientRepository _apiClientRepository;
+        private readonly IKnownDeliveryTargetRepository _apiTargetRepository;
+        private readonly ISystemAdministratorRepository _botAdminRepository;
 
         private readonly IDbContextFactory<ApiSecurityDbContext> _dbContextFactory;
         private readonly IEncryptionService _encryptionService;
@@ -34,9 +25,9 @@ namespace Client.Security
         private readonly byte[] _apiKeyHashPepperBytes;
 
         public ApiSecurityStore(
-            IntegrationClientRepository apiClientRepository,
-            KnownDeliveryTargetRepository apiTargetRepository,
-            SystemAdministratorRepository botAdminRepository,
+            IIntegrationClientRepository apiClientRepository,
+            IKnownDeliveryTargetRepository apiTargetRepository,
+            ISystemAdministratorRepository botAdminRepository,
             IDbContextFactory<ApiSecurityDbContext> dbContextFactory,
             IEncryptionService encryptionService,
             IOptions<AppApiConfig> apiConfig,
@@ -124,14 +115,14 @@ namespace Client.Security
                 var keyPreview = CreateKeyPreview(apiKey);
                 var encryptedZabbixToken = _encryptionService.Encrypt(zabbixApiToken);
 
-                var entity = new IntegrationClientEntity
+                var entity = new IntegrationClients
                 {
                     Name = normalizedClientName,
                     KeyHash = apiKeyHash,
                     KeyPreview = keyPreview,
                     IsActive = true,
                     CreatedAtUtc = DateTime.UtcNow,
-                    ZabbixCredential = new ZabbixCredentialEntity
+                    ZabbixCredential = new ZabbixCredentials
                     {
                         ApiUrl = zabbixApiUrl,
                         EncryptedApiToken = encryptedZabbixToken,
@@ -172,7 +163,7 @@ namespace Client.Security
 
             if (client.ZabbixCredential == null)
             {
-                client.ZabbixCredential = new ZabbixCredentialEntity { AssociatedIntegrationClientId = clientId, CreatedAtUtc = DateTime.UtcNow };
+                client.ZabbixCredential = new ZabbixCredentials { AssociatedIntegrationClientId = clientId, CreatedAtUtc = DateTime.UtcNow };
             }
 
             client.ZabbixCredential.ApiUrl = newUrl;

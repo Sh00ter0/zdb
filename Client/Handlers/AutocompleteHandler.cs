@@ -1,13 +1,8 @@
-﻿using Client.Data;
-using Client.Data.Repositories;
-using Client.Security;
+﻿using Application.Repositories;
+using Client.Data;
 using Discord;
 using Discord.Interactions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Client.Handlers
 {
@@ -62,7 +57,7 @@ namespace Client.Handlers
             IParameterInfo parameter,
             IServiceProvider services)
         {
-            var apiAdminRepository = services.GetRequiredService<SystemAdministratorRepository>();
+            var apiAdminRepository = services.GetRequiredService<ISystemAdministratorRepository>();
             if (!await apiAdminRepository.IsActiveAsync(context.User.Id))
             {
                 return AutocompletionResult.FromSuccess(Enumerable.Empty<AutocompleteResult>());

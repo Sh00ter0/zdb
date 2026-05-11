@@ -1,18 +1,13 @@
-﻿using Client.Data;
-using Client.Data.Repositories;
-using Client.Enums;
-using Client.Models;
-using Client.Policies;
-using Client.Services;
+﻿using Application.Common.Zabbix;
+using Application.Repositories;
+using Application.Services.Discord;
 using Discord;
 using Discord.WebSocket;
+using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Logging;
-using System;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace Client.Controllers
 {
@@ -25,14 +20,14 @@ namespace Client.Controllers
         private const string ErrorIdPrefix = "DZB";
 
         private readonly DiscordSocketClient _client;
-        private readonly KnownDeliveryTargetRepository _targetRepository;
+        private readonly IKnownDeliveryTargetRepository _targetRepository;
         private readonly IDiscordTargetSyncService _targetSyncService;
         private readonly IDiscordUiService _discordUiService;
         private readonly ILogger<ZabbixController> _logger;
 
         public ZabbixController(
             DiscordSocketClient client,
-            KnownDeliveryTargetRepository targetRepository,
+            IKnownDeliveryTargetRepository targetRepository,
             IDiscordTargetSyncService targetSyncService,
             IDiscordUiService discordUiService,
             ILogger<ZabbixController> logger)

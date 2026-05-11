@@ -1,17 +1,11 @@
-﻿using Client.Data;
+﻿using Application.Services.API;
 using Client.Handlers;
 using Client.Models;
-using Client.Security;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Client.Services;
 

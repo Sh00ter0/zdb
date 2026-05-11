@@ -1,4 +1,4 @@
-﻿using Client.Enums;
+﻿using Application.Common.Config;
 using Serilog;
 using VaultSharp.Extensions.Configuration;
 using VaultSharp.V1.AuthMethods.AppRole;

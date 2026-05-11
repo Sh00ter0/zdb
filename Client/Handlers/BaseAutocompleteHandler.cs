@@ -1,5 +1,4 @@
-﻿using Client.Data.Repositories;
-using Client.Security;
+﻿using Application.Repositories;
 using Discord;
 using Discord.Interactions;
 
@@ -20,7 +19,7 @@ public abstract class BaseAutocompleteHandler : AutocompleteHandler
     {
         try
         {
-            var apiBotAdminRepository = services.GetRequiredService<SystemAdministratorRepository>();
+            var apiBotAdminRepository = services.GetRequiredService<ISystemAdministratorRepository>();
 
             if (!await apiBotAdminRepository.IsActiveAsync(context.User.Id))
             {

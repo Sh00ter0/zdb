@@ -1,10 +1,14 @@
-﻿using Client.Data;
+﻿using Application.Common.API;
+using Application.Repositories;
+using Application.Services.API;
+using Application.Services.Discord;
+using Application.Services.Pagination;
+using Client.Data;
 using Client.Data.Repositories;
 using Client.Extensions;
 using Client.Handlers;
 using Client.Middleware;
 using Client.Models;
-using Client.Policies;
 using Client.Policies.Handlers;
 using Client.Policies.Requirements;
 using Client.Security;
@@ -12,6 +16,7 @@ using Client.Services;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Domain.Enums;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -156,11 +161,11 @@ internal static class HostingExtensions
         services.AddSingleton<IDiscordUiService, DiscordUiService>();
         services.AddSingleton<IPaginationService, PaginationService>();
         services.AddSingleton<IDiscordTargetSyncService, DiscordTargetSyncService>();
-        services.AddSingleton<IApplicationEmoteCache, ApplicationEmoteCache>();
+        services.AddSingleton<IDiscordEmoteService, DiscordEmoteService>();
 
-        services.AddSingleton<IntegrationClientRepository, ApiClientRepository>();
-        services.AddSingleton<KnownDeliveryTargetRepository, ApiTargetRepository>();
-        services.AddSingleton<SystemAdministratorRepository, BotAdminRepository>();
+        services.AddSingleton<IIntegrationClientRepository, ApiClientRepository>();
+        services.AddSingleton<IKnownDeliveryTargetRepository, ApiTargetRepository>();
+        services.AddSingleton<ISystemAdministratorRepository, BotAdminRepository>();
 
         services.AddControllers();
         services.AddOpenApi();
@@ -178,7 +183,8 @@ internal static class HostingExtensions
         services.AddAuthentication(apiKeyScheme)
             .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(apiKeyScheme, _ => { });
 
-        services.AddAuthorization(opts => {
+        services.AddAuthorization(opts =>
+        {
             opts.AddPolicy(Policy.ZabbixIngress, policy => policy.AddAuthenticationSchemes(apiKeyScheme).RequireAuthenticatedUser());
             opts.AddPolicy(Policy.TargetAccess, policy => policy.RequireAuthenticatedUser().AddRequirements(new TargetAccessRequirement()));
         });

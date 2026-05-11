@@ -1,5 +1,5 @@
 ﻿using Client.Attributes;
-using Client.Enums;
+using Domain.Attributes;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;

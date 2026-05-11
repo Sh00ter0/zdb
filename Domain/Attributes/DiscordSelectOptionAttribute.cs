@@ -1,7 +1,8 @@
-﻿using Client.Enums;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace Client.Attributes
+namespace Domain.Attributes
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class DiscordSelectOptionAttribute : Attribute

@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Properties\launchSettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Assets\Emotes\UI_ICON_ACTIVE.png" />
     <None Remove="Assets\Emotes\UI_ICON_BULB_OFF.png" />
     <None Remove="Assets\Emotes\UI_ICON_BULB_ON.png" />
@@ -141,7 +145,6 @@
     <Content Include="Assets\Emotes\UI_ICON_X.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="properties\launchSettings.example.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -166,6 +169,11 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\Application.csproj" />
+    <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
 
 </Project>

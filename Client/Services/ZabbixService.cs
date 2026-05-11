@@ -1,34 +1,21 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
+using Application.Common.API;
+using Application.Common.Zabbix;
+using Application.Repositories;
+using Application.Services.API;
+using Client.Data;
+using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using Client.Models;
-using Client.Data;
-using Client.Security;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Client.Data.Repositories;
 
 namespace Client.Services
 {
-    public class ZabbixAcknowledgeResult
-    {
-        [JsonPropertyName("eventids")]
-        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-        public long[] EventIds { get; set; } = [];
-    }
-
     public class ZabbixService
     {
         private readonly HttpClient _httpClient;
         private readonly IDbContextFactory<ApiSecurityDbContext> _dbContextFactory;
         private readonly IEncryptionService _encryptionService;
         private readonly IApiSecurityStore _apiSecurityStore;
-        private readonly IntegrationClientRepository _clientRepository;
+        private readonly IIntegrationClientRepository _clientRepository;
         private readonly ILogger<ZabbixService> _logger;
 
         public ZabbixService(
@@ -36,7 +23,7 @@ namespace Client.Services
             IDbContextFactory<ApiSecurityDbContext> dbContextFactory,
             IEncryptionService encryptionService,
             IApiSecurityStore apiSecurityStore,
-            IntegrationClientRepository clientRepository,
+            IIntegrationClientRepository clientRepository,
             ILogger<ZabbixService> logger)
         {
             _httpClient = httpClient;
