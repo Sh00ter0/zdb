@@ -3,12 +3,16 @@ using Client.Data.Repositories;
 using Client.Handlers;
 using Client.Middleware;
 using Client.Models;
+using Client.Policies;
+using Client.Policies.Handlers;
+using Client.Policies.Requirements;
 using Client.Security;
 using Client.Services;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -169,6 +173,10 @@ internal static class HostingExtensions
         services.AddControllers();
         services.AddOpenApi();
 
+        //Authorization handler
+        services.AddHttpContextAccessor();
+        services.AddSingleton<IAuthorizationHandler, TargetAccessHandler>();
+
         return services;
     }
 
@@ -179,9 +187,10 @@ internal static class HostingExtensions
         services.AddAuthentication(apiKeyScheme)
             .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(apiKeyScheme, _ => { });
 
-        services.AddAuthorization(opts =>
-            opts.AddPolicy("ZabbixIngress", policy => policy.AddAuthenticationSchemes(apiKeyScheme).RequireAuthenticatedUser())
-        );
+        services.AddAuthorization(opts => {
+            opts.AddPolicy(Policy.ZabbixIngress, policy => policy.AddAuthenticationSchemes(apiKeyScheme).RequireAuthenticatedUser());
+            opts.AddPolicy(Policy.TargetAccess, policy => policy.RequireAuthenticatedUser().AddRequirements(new TargetAccessRequirement()));
+            });
 
         services.Configure<ForwardedHeadersOptions>(opts =>
         {
