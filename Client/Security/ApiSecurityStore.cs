@@ -1,9 +1,9 @@
 ﻿using Application.Common.API;
 using Application.Repositories;
 using Application.Services.API;
-using Client.Data;
 using Client.Models;
 using Domain.Entities;
+using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;

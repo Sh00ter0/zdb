@@ -1,7 +1,4 @@
-﻿using Discord;
-using Discord.Interactions;
-
-namespace Client.Models
+﻿namespace Client.Models
 {
     public class AppApiConfig
     {
@@ -14,55 +11,4 @@ namespace Client.Models
         public List<string> knownProxies { get; set; } = [];
         public string masterEncryptionKey { get; set; } = null!;
     }
-    public class AppDiscordConfig
-    {
-        public string apiToken { get; set; } = null!;
-    }
-
-    public class ZabbixCommentModal : IModal
-    {
-        public string Title => "Add Comment";
-
-        [InputLabel("Comment")]
-        [ModalTextInput("comment_text")]
-        public string Comment { get; set; } = string.Empty;
-    }
-
-    public class ZabbixActionModal : IModal
-    {
-        public string Title => "Zabbix: Event Processing";
-
-        [InputLabel("Comment")]
-        [ModalTextInput("comment_text", TextInputStyle.Paragraph, placeholder: "Describe the actions taken...", minLength: 1, maxLength: 500)]
-        public string Comment { get; set; } = string.Empty;
-    }
-
-
-    public class UserVisibleException : Exception
-    {
-        public UserVisibleException(string message) : base(message) { }
-    }
-
-    public class ClientActionModal : IModal
-    {
-        public string Title => "Action Confirmation";
-
-        [InputLabel("Confirmation")]
-        [ModalTextInput("confirm_text")]
-        public string ConfirmText { get; set; } = string.Empty;
-    }
-
-    public class ZabbixCredentialsModal : IModal
-    {
-        public string Title => "Update Zabbix Connection";
-
-        [InputLabel("New Zabbix API URL")]
-        [ModalTextInput("url", TextInputStyle.Short, placeholder: "https://zabbix.yourdomain.com/api_jsonrpc.php")]
-        public string Url { get; set; } = string.Empty;
-
-        [InputLabel("New Zabbix API Token")]
-        [ModalTextInput("token", TextInputStyle.Short, placeholder: "Enter new token...")]
-        public string Token { get; set; } = string.Empty;
-    }
-
 }
