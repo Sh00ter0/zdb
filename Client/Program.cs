@@ -1,17 +1,26 @@
-﻿using Client.Data;
-using Client.Data.Repositories;
-using Client.Extensions;
+﻿using Application.Common.API;
+using Application.Repositories;
+using Application.Services.API;
+using Application.Services.Discord;
+using Application.Services.Pagination;
 using Client.Handlers;
 using Client.Middleware;
 using Client.Models;
-using Client.Policies;
 using Client.Policies.Handlers;
 using Client.Policies.Requirements;
 using Client.Security;
-using Client.Services;
+using Client.Vault;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Domain.Enums;
+using Infrastructure.Discord.Events;
+using Infrastructure.Models;
+using Infrastructure.Persistence;
+using Infrastructure.Persistence.Repositories;
+using Infrastructure.Services;
+using Infrastructure.Services.Discord;
+using Infrastructure.Services.Zabbix;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -63,8 +72,11 @@ try
 
     app.UseForwardedHeaders();
 
-    app.UseMiddleware<SecureRequestMiddleware>();
-    app.UseMiddleware<DiscordStatusMiddleware>();
+    if (!app.Environment.IsEnvironment("Testing"))
+    {
+        app.UseMiddleware<SecureRequestMiddleware>();
+        app.UseMiddleware<DiscordStatusMiddleware>();
+    }
 
     app.UseRouting();
     app.UseAuthentication();
@@ -139,7 +151,7 @@ internal static class HostingExtensions
             Directory.CreateDirectory(dbDirectory);
         }
 
-        services.AddDbContextFactory<ApiSecurityDbContext>(opts => opts.UseSqlite($"Data Source={databasePath}"));
+        services.AddDbContextFactory<ApiSecurityDbContext>(opts => opts.UseSqlite($"Data Source={databasePath}", b => b.MigrationsAssembly("Infrastructure")));
 
         services.AddSingleton(new DiscordSocketConfig { GatewayIntents = GatewayIntents.DirectMessages, AlwaysDownloadUsers = false, ConnectionTimeout = 30000, LogLevel = LogSeverity.Verbose });
         services.AddSingleton<DiscordSocketClient>();
@@ -156,11 +168,11 @@ internal static class HostingExtensions
         services.AddSingleton<IDiscordUiService, DiscordUiService>();
         services.AddSingleton<IPaginationService, PaginationService>();
         services.AddSingleton<IDiscordTargetSyncService, DiscordTargetSyncService>();
-        services.AddSingleton<IApplicationEmoteCache, ApplicationEmoteCache>();
+        services.AddSingleton<IDiscordEmoteService, DiscordEmoteService>();
 
-        services.AddSingleton<IntegrationClientRepository, ApiClientRepository>();
-        services.AddSingleton<KnownDeliveryTargetRepository, ApiTargetRepository>();
-        services.AddSingleton<SystemAdministratorRepository, BotAdminRepository>();
+        services.AddSingleton<IIntegrationClientRepository, ApiClientRepository>();
+        services.AddSingleton<IKnownDeliveryTargetRepository, ApiTargetRepository>();
+        services.AddSingleton<ISystemAdministratorRepository, BotAdminRepository>();
 
         services.AddControllers();
         services.AddOpenApi();
@@ -178,7 +190,8 @@ internal static class HostingExtensions
         services.AddAuthentication(apiKeyScheme)
             .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(apiKeyScheme, _ => { });
 
-        services.AddAuthorization(opts => {
+        services.AddAuthorization(opts =>
+        {
             opts.AddPolicy(Policy.ZabbixIngress, policy => policy.AddAuthenticationSchemes(apiKeyScheme).RequireAuthenticatedUser());
             opts.AddPolicy(Policy.TargetAccess, policy => policy.RequireAuthenticatedUser().AddRequirements(new TargetAccessRequirement()));
         });
@@ -211,3 +224,5 @@ internal static class HostingExtensions
         return services;
     }
 }
+// xUnit
+public partial class Program { }
