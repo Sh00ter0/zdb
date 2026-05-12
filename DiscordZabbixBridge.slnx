@@ -2,6 +2,7 @@
   <Project Path="Application/Application.csproj" Id="579b6d28-d351-4453-b6f3-4c722f421771" />
   <Project Path="Client/Client.csproj" />
   <Project Path="Domain/Domain.csproj" />
+  <Project Path="Infrastructure/Infrastructure.csproj" Id="8d68f811-5b49-4bf1-91dc-50a2dd856aed" />
   <Project Path="Key.Generator/Key.Generator.csproj" />
   <Project Path="Tests/Tests.csproj" Id="2ac60d9d-5ebf-4267-af94-ebffe179d2f3" />
 </Solution>

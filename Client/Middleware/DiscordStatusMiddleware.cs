@@ -1,5 +1,4 @@
-﻿using Client.Services;
-using Serilog;
+﻿using Infrastructure.Services.Discord;
 
 namespace Client.Middleware
 {
