@@ -61,7 +61,7 @@ public class InteractionHandler(
 
                     await emoteCache.SynchronizeEmotesAsync();
 
-                    await handler.AddModulesAsync(Assembly.GetEntryAssembly(), services);
+                    await handler.AddModulesAsync(typeof(InteractionHandler).Assembly, services);
                     logger.LogDebug("Successfully loaded all interaction modules into the service.");
 
                     await handler.RegisterCommandsGloballyAsync(deleteMissing: true);
