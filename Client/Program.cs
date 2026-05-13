@@ -38,7 +38,7 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
     .Enrich.With<LogSanitizerEnricher>()
     .WriteTo.Console(
-        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}",
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:j}{NewLine}{Exception}",
         theme: AnsiConsoleTheme.Code)
     .CreateBootstrapLogger();
 
@@ -54,7 +54,7 @@ try
         .Enrich.FromLogContext()
         .Enrich.With<LogSanitizerEnricher>()
         .WriteTo.Console(
-            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}",
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:j}{NewLine}{Exception}",
             theme: AnsiConsoleTheme.Code));
 
     builder.AddEnterpriseSecrets();

@@ -9,7 +9,7 @@ using Moq;
 using System.Net;
 using System.Net.Http.Json;
 
-namespace Tests.Integration;
+namespace Tests.Integration.Client.Controllers;
 
 /// <summary>
 /// Integration tests for the Zabbix API authentication and authorization flow.
@@ -23,21 +23,6 @@ public class ZabbixApiAuthTests : IClassFixture<WebApplicationFactory<Program>>
 
     public ZabbixApiAuthTests(WebApplicationFactory<Program> factory)
     {
-        // Inject fake environment variables to bypass the HashiCorp Vault validation 
-        // and satisfy the minimal API startup requirements.
-        // Note: Fake tokens, do not try to use them in production :-)
-        Environment.SetEnvironmentVariable("DZB_SECRET_PROVIDER", "Local");
-        Environment.SetEnvironmentVariable("DZB_discord__apiToken", "MTEyMjMzNDQ1NTY2Nzc4ODk5.Gxyz12.1234567890abcdefghijklmnopqrstuvwxyz123");
-        Environment.SetEnvironmentVariable("DZB_api__apiKeyHashPepper", "test-dummy-pepper");
-        Environment.SetEnvironmentVariable("DZB_api__masterEncryptionKey", "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=");
-
-        // Override appsettings.json values specifically for the testing environment
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
-        Environment.SetEnvironmentVariable("DZB_api__headerName", "Api-Key");
-        Environment.SetEnvironmentVariable("DZB_api__databasePath", "test_security.db");
-        Environment.SetEnvironmentVariable("DZB_api__rateLimitPermit", "10");
-        Environment.SetEnvironmentVariable("DZB_api__rateLimitWindowSeconds", "60");
-
         _mockSecurityStore = new Mock<IApiSecurityStore>();
         _mockTargetRepository = new Mock<IKnownDeliveryTargetRepository>();
 
