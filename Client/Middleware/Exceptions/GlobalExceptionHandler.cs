@@ -19,7 +19,7 @@ namespace Client.Middleware.Exceptions
             
             ProblemException problemException = (ProblemException)exception;
 
-            _logger.LogError("[{Exception}] - Encountered an while processing the request at: {Path}", problemException.Error, context.Request.Path.Value);
+            _logger.LogError("[{Exception}] - Encountered an error while processing the request at: {Path}", problemException.Error, context.Request.Path.Value);
 
             var problemDetails = new ProblemDetails
             {
