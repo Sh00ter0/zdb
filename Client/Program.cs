@@ -16,6 +16,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Domain.Enums;
 using Infrastructure.Discord.Events;
+using Infrastructure.Discord.SlashCommands.Commands;
 using Infrastructure.Logging;
 using Infrastructure.Models;
 using Infrastructure.Persistence;
@@ -189,6 +190,11 @@ internal static class HostingExtensions
         services.AddSingleton<IKnownDeliveryTargetRepository, ApiTargetRepository>();
         services.AddSingleton<ISystemAdministratorRepository, BotAdminRepository>();
 
+        services.AddTransient<ClientCommandsController>();
+        services.AddTransient<WellKnownTargetsController>();
+        services.AddTransient<AdministrationCommandsController>();
+        services.AddTransient<ZabbixDirectMessageController>();
+
         services.AddControllers();
         services.AddOpenApi();
 
@@ -239,5 +245,7 @@ internal static class HostingExtensions
         return services;
     }
 }
+# if DEBUG
 // xUnit
 public partial class Program { }
+#endif
