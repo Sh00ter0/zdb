@@ -12,25 +12,13 @@ public class LogSanitizerEnricher : ILogEventEnricher
 
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
     {
-        List<LogEventProperty>? propertiesToUpdate = null;
-
-        foreach (var property in logEvent.Properties)
+        foreach (var property in logEvent.Properties.ToList())
         {
             var sanitizedValue = SanitizePropertyValue(property.Value);
 
-            // If the value was modified (a new instance was returned), queue it for update
             if (!ReferenceEquals(sanitizedValue, property.Value))
             {
-                (propertiesToUpdate ??= []).Add(
-                new LogEventProperty(property.Key, sanitizedValue));
-            }
-        }
-
-        if (propertiesToUpdate is not null)
-        {
-            foreach (var property in propertiesToUpdate)
-            {
-                logEvent.AddOrUpdateProperty(property);
+                logEvent.AddOrUpdateProperty(new LogEventProperty(property.Key, sanitizedValue));
             }
         }
     }
