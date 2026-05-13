@@ -21,6 +21,7 @@ using Infrastructure.Models;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.Services;
+using Infrastructure.Services.API;
 using Infrastructure.Services.Discord;
 using Infrastructure.Services.Zabbix;
 using Microsoft.AspNetCore.Authentication;
@@ -182,6 +183,7 @@ internal static class HostingExtensions
         services.AddSingleton<IPaginationService, PaginationService>();
         services.AddSingleton<IDiscordTargetSyncService, DiscordTargetSyncService>();
         services.AddSingleton<IDiscordEmoteService, DiscordEmoteService>();
+        services.AddScoped<DiscordAlertService>();
 
         services.AddSingleton<IIntegrationClientRepository, ApiClientRepository>();
         services.AddSingleton<IKnownDeliveryTargetRepository, ApiTargetRepository>();
