@@ -1,4 +1,5 @@
-﻿using Infrastructure.Services.Discord;
+﻿using Application.Exceptions.API;
+using Infrastructure.Services.Discord;
 
 namespace Client.Middleware
 {
@@ -6,27 +7,17 @@ namespace Client.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly DiscordStateService _stateService;
-        private readonly ILogger<DiscordStatusMiddleware> _logger;
-        public DiscordStatusMiddleware(RequestDelegate next, DiscordStateService stateService, ILogger<DiscordStatusMiddleware> logger)
+        public DiscordStatusMiddleware(RequestDelegate next, DiscordStateService stateService)
         {
             _next = next;
             _stateService = stateService;
-            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
             if (!_stateService.IsReady)
             {
-                _logger.LogWarning("Discord client is not connected or ready.");
-                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-                await context.Response.WriteAsJsonAsync(new
-                {
-                    error = "Discord client not ready",
-                    message = "The Discord client is still connecting or initializing. Please try again shortly."
-                });
-
-                return;
+                throw new ProblemException("Discord Not Ready", "The Discord client is not ready yet. Please try again later.", StatusCodes.Status503ServiceUnavailable);
             }
             await _next(context);
         }

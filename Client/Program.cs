@@ -5,6 +5,7 @@ using Application.Services.Discord;
 using Application.Services.Pagination;
 using Client.Handlers;
 using Client.Middleware;
+using Client.Middleware.Exceptions;
 using Client.Models;
 using Client.Policies.Handlers;
 using Client.Policies.Requirements;
@@ -47,6 +48,14 @@ try
     Log.Information("The application is starting, please wait...");
 
     var builder = WebApplication.CreateBuilder(args);
+    builder.Services.AddProblemDetails(options =>
+    {
+        options.CustomizeProblemDetails = context =>
+        {
+            context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+        };
+    });
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
     builder.Host.UseSerilog((context, services, configuration) => configuration
         .ReadFrom.Configuration(context.Configuration)
@@ -73,6 +82,7 @@ try
 
     var app = builder.Build();
 
+    app.UseExceptionHandler();
     app.UseForwardedHeaders();
 
     if (!app.Environment.IsEnvironment("Testing"))
