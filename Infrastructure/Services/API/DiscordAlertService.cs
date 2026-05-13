@@ -16,7 +16,6 @@ namespace Infrastructure.Services.API
     {
         public async Task ProcessAlertAsync(long clientId, ulong targetId, ZabbixPayload payload)
         {
-            var targetData = await targetRepository.GetByDiscordIdAsync(clientId, targetId);
             var channel = await ResolveTargetChannelAsync(targetId);
             if (channel == null)
             {
@@ -25,6 +24,8 @@ namespace Infrastructure.Services.API
 
             var component = uiService.CreateZabbixAlertContainer(payload, false, clientId);
             var message = await SendAlertAsync(channel, component);
+
+            var targetData = await targetRepository.GetByDiscordIdAsync(clientId, targetId);
             if (targetData.ChannelType == TextChannelType.GuildAnnouncementChannel && targetData.AutoCrosspost)
             {
                 await HandleCrosspostAsync(message);
