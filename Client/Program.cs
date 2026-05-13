@@ -15,6 +15,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Domain.Enums;
 using Infrastructure.Discord.Events;
+using Infrastructure.Logging;
 using Infrastructure.Models;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
@@ -35,8 +36,9 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .Enrich.FromLogContext()
+    .Enrich.With<LogSanitizerEnricher>()
     .WriteTo.Console(
-        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}",
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:j}{NewLine}{Exception}",
         theme: AnsiConsoleTheme.Code)
     .CreateBootstrapLogger();
 
@@ -50,8 +52,9 @@ try
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
+        .Enrich.With<LogSanitizerEnricher>()
         .WriteTo.Console(
-            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}",
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:j}{NewLine}{Exception}",
             theme: AnsiConsoleTheme.Code));
 
     builder.AddEnterpriseSecrets();
