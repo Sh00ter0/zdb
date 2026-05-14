@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using Domain.Enums;
+using Infrastructure.Mediators;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Discord;
@@ -9,14 +10,16 @@ public class DiscordStateService
 {
     private readonly DiscordSocketClient _client;
     private readonly ILogger<DiscordStateService> _logger;
+    private readonly DiscordStateMediator _mediator;
 
     private DateTimeOffset? _disconnectedAt;
     private readonly TimeSpan _gracePeriod = TimeSpan.FromSeconds(30);
 
-    public DiscordStateService(DiscordSocketClient client, ILogger<DiscordStateService> logger)
+    public DiscordStateService(DiscordSocketClient client, ILogger<DiscordStateService> logger, DiscordStateMediator mediator)
     {
         _client = client;
         _logger = logger;
+        _mediator = mediator;
 
         _client.Ready += OnReady;
         _client.Disconnected += OnDisconnected;
@@ -54,6 +57,9 @@ public class DiscordStateService
     private Task OnReady()
     {
         _disconnectedAt = null;
+
+        _mediator.ChangeState(HealthState);
+
         _logger.LogInformation("Discord gateway is ready and operational");
         return Task.CompletedTask;
     }
@@ -61,6 +67,9 @@ public class DiscordStateService
     private Task OnConnected()
     {
         _disconnectedAt = null;
+
+        _mediator.ChangeState(HealthState);
+
         _logger.LogInformation("Discord gateway connection established");
         return Task.CompletedTask;
     }
@@ -69,6 +78,8 @@ public class DiscordStateService
     {
         _disconnectedAt ??= DateTimeOffset.UtcNow;
 
+        _mediator.ChangeState(HealthState);
+
         _logger.LogWarning("Discord gateway disconnected. Reason: {Reason}", ex?.Message ?? "Unknown");
         return Task.CompletedTask;
     }
@@ -76,6 +87,8 @@ public class DiscordStateService
     private Task OnLoggedOut()
     {
         _disconnectedAt ??= DateTimeOffset.UtcNow;
+
+        _mediator.ChangeState(HealthState);
 
         _logger.LogWarning("Discord client logged out");
         return Task.CompletedTask;

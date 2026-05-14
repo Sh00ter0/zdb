@@ -17,6 +17,7 @@ using Discord.WebSocket;
 using Domain.Enums;
 using Infrastructure.Discord.Events;
 using Infrastructure.Logging;
+using Infrastructure.Mediators;
 using Infrastructure.Models;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
@@ -169,6 +170,7 @@ internal static class HostingExtensions
 
         services.AddSingleton(new DiscordSocketConfig { GatewayIntents = GatewayIntents.DirectMessages, AlwaysDownloadUsers = false, LogLevel = LogSeverity.Verbose });
         services.AddSingleton<DiscordSocketClient>();
+        services.AddSingleton<DiscordStartupService>();
         services.AddSingleton(sp => new InteractionService(sp.GetRequiredService<DiscordSocketClient>(), new InteractionServiceConfig { DefaultRunMode = Discord.Interactions.RunMode.Async }));
 
         services.AddMemoryCache();
@@ -176,6 +178,7 @@ internal static class HostingExtensions
         services.AddSingleton<IApiSecurityStore, ApiSecurityStore>();
         services.AddSingleton<IEncryptionService>(sp => new EncryptionService(masterKey, sp.GetRequiredService<ILogger<EncryptionService>>()));
         services.AddSingleton<DiscordStateService>();
+        services.AddSingleton<DiscordStateMediator>();
 
         services.AddHttpClient();
         services.AddHostedService<DiscordWatchdogService>();
