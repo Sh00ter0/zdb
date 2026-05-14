@@ -2,6 +2,8 @@
 using Discord.WebSocket;
 using Domain.Enums;
 using Infrastructure.Mediators;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Discord;
@@ -11,9 +13,8 @@ public class DiscordStateService
     private readonly DiscordSocketClient _client;
     private readonly ILogger<DiscordStateService> _logger;
     private readonly DiscordStateMediator _mediator;
-
-    private DateTimeOffset? _disconnectedAt;
-    private readonly TimeSpan _gracePeriod = TimeSpan.FromSeconds(30);
+    public bool IsOperational => _mediator.HealthState == DiscordHealthState.Healthy;
+    public DiscordHealthState HealthState => _mediator.HealthState;
 
     public DiscordStateService(DiscordSocketClient client, ILogger<DiscordStateService> logger, DiscordStateMediator mediator)
     {
@@ -27,70 +28,35 @@ public class DiscordStateService
         _client.LoggedOut += OnLoggedOut;
     }
 
-    public DiscordHealthState HealthState
-    {
-        get
-        {
-            if (_client.LoginState == LoginState.LoggedIn &&
-                _client.ConnectionState == ConnectionState.Connected)
-            {
-                return DiscordHealthState.Healthy;
-            }
-
-            if (_disconnectedAt.HasValue &&
-                DateTimeOffset.UtcNow - _disconnectedAt.Value < _gracePeriod)
-            {
-                return DiscordHealthState.Degraded;
-            }
-
-            return DiscordHealthState.Offline;
-        }
-    }
-
-    public bool IsOperational =>
-        HealthState is DiscordHealthState.Healthy or DiscordHealthState.Degraded;
-
-    public TimeSpan OfflineDuration => _disconnectedAt.HasValue
-        ? DateTimeOffset.UtcNow - _disconnectedAt.Value
-        : TimeSpan.Zero;
-
     private Task OnReady()
     {
-        _disconnectedAt = null;
-
-        _mediator.ChangeState(HealthState);
-
         _logger.LogInformation("Discord gateway is ready and operational");
+        _mediator.ChangeState(DiscordHealthState.Healthy);
+
         return Task.CompletedTask;
     }
 
     private Task OnConnected()
     {
-        _disconnectedAt = null;
-
-        _mediator.ChangeState(HealthState);
-
         _logger.LogInformation("Discord gateway connection established");
+        _mediator.ChangeState(DiscordHealthState.Healthy);
+
         return Task.CompletedTask;
     }
 
     private Task OnDisconnected(Exception ex)
     {
-        _disconnectedAt ??= DateTimeOffset.UtcNow;
-
-        _mediator.ChangeState(HealthState);
-
         _logger.LogWarning("Discord gateway disconnected. Reason: {Reason}", ex?.Message ?? "Unknown");
+        _mediator.ChangeState(DiscordHealthState.Offline);
+
         return Task.CompletedTask;
     }
 
     private Task OnLoggedOut()
     {
-        _disconnectedAt ??= DateTimeOffset.UtcNow;
-
-        _mediator.ChangeState(HealthState);
-
         _logger.LogWarning("Discord client logged out");
+        _mediator.ChangeState(DiscordHealthState.Offline);
+
         return Task.CompletedTask;
     }
 }

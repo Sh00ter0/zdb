@@ -15,6 +15,8 @@ public class DiscordWatchdogService(DiscordStartupService discordStartup,
 
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
 
+    private DateTimeOffset? _disconnectedAt;
+
     private int _failedResetAttempts = 0;
 
     private CancellationTokenSource CancelationToken = new();
@@ -25,10 +27,6 @@ public class DiscordWatchdogService(DiscordStartupService discordStartup,
         {
             case DiscordHealthState.Healthy:
                 ResetWatcher();
-                break;
-            case DiscordHealthState.Degraded:
-                logger.LogWarning("Discord connection state changed to Degraded. Monitoring closely...");
-                await StartWatcher();
                 break;
             case DiscordHealthState.Offline:
                 logger.LogError("Discord connection state changed to Offline. Will attempt recovery if condition persists.");
@@ -42,13 +40,14 @@ public class DiscordWatchdogService(DiscordStartupService discordStartup,
         logger.LogInformation("Discord connection state changed to Healthy.");
 
         _failedResetAttempts = 0;
+        _disconnectedAt = null;
         CancelationToken.Cancel();
     }
 
     private async Task StartWatcher()
     {
         if (!CancelationToken.Token.IsCancellationRequested) return;
-
+        _disconnectedAt ??= DateTimeOffset.UtcNow;
         CancelationToken = new();
 
         await Task.Delay(_criticalOfflineThreshold, CancelationToken.Token);
@@ -57,6 +56,7 @@ public class DiscordWatchdogService(DiscordStartupService discordStartup,
         {
             await Task.Delay(_checkInterval, CancelationToken.Token);
             if (CancelationToken.Token.IsCancellationRequested) return;
+            logger.LogWarning("Discord connection has been offline for {Duration}.", DateTimeOffset.UtcNow - _disconnectedAt.Value);
 
             bool isApiReachable = await PingDiscordApiAsync();
             if (isApiReachable)
