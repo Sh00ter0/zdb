@@ -59,7 +59,6 @@ public class DiscordWatchdogService(DiscordStartupService discordStartup,
             logger.LogWarning("Discord connection has been offline for {Duration}.", DateTimeOffset.UtcNow - _disconnectedAt.Value);
 
             bool isApiReachable = await PingDiscordApiAsync();
-            if (isApiReachable)
             if (!isApiReachable)
             {
                 logger.LogWarning("Discord API is currently unreachable. Aborting client hard reset. Will retry in the next cycle.");
