@@ -54,7 +54,7 @@ public class DiscordWatchdogService(
 
             bool isApiReachable = await PingDiscordApiAsync(stoppingToken);
 
-            if (isApiReachable)
+            if (!isApiReachable)
             {
                 logger.LogWarning("Discord API is currently unreachable. Aborting client hard reset. Will retry in the next cycle.");
                 continue;
