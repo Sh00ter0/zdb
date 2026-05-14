@@ -1,24 +1,22 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using Domain.Enums;
-using Serilog;
-using System;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Discord;
 
 public class DiscordStateService
 {
     private readonly DiscordSocketClient _client;
-    private readonly ILogger _apiLog;
+    private readonly ILogger<DiscordStateService> _logger;
 
     private DateTimeOffset? _disconnectedAt;
     private readonly TimeSpan _gracePeriod = TimeSpan.FromSeconds(30);
 
-    public DiscordStateService(DiscordSocketClient client)
+    public DiscordStateService(DiscordSocketClient client, ILogger<DiscordStateService> logger)
     {
         _client = client;
-        _apiLog = Log.ForContext("Source", "Discord");
+        _logger = logger;
 
         _client.Ready += OnReady;
         _client.Disconnected += OnDisconnected;
@@ -56,14 +54,14 @@ public class DiscordStateService
     private Task OnReady()
     {
         _disconnectedAt = null;
-        _apiLog.Information("Discord gateway is ready and operational");
+        _logger.LogInformation("Discord gateway is ready and operational");
         return Task.CompletedTask;
     }
 
     private Task OnConnected()
     {
         _disconnectedAt = null;
-        _apiLog.Information("Discord gateway connection established");
+        _logger.LogInformation("Discord gateway connection established");
         return Task.CompletedTask;
     }
 
@@ -71,7 +69,7 @@ public class DiscordStateService
     {
         _disconnectedAt ??= DateTimeOffset.UtcNow;
 
-        _apiLog.Warning("Discord gateway disconnected. Reason: {Reason}", ex?.Message ?? "Unknown");
+        _logger.LogWarning("Discord gateway disconnected. Reason: {Reason}", ex?.Message ?? "Unknown");
         return Task.CompletedTask;
     }
 
@@ -79,7 +77,7 @@ public class DiscordStateService
     {
         _disconnectedAt ??= DateTimeOffset.UtcNow;
 
-        _apiLog.Warning("Discord client logged out");
+        _logger.LogWarning("Discord client logged out");
         return Task.CompletedTask;
     }
 }
