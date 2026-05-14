@@ -5,11 +5,6 @@ using Infrastructure.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Serilog;
-using System;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Services.Discord;
 
@@ -30,6 +25,9 @@ public class DiscordWatchdogService(
     // How often to check the Discord connection health
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
 
+    // Counter for consecutive failed reset attempts
+    private int _failedResetAttempts = 0;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Discord Watchdog Service has started. Monitoring connection health...");
@@ -39,6 +37,12 @@ public class DiscordWatchdogService(
 
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
+            // Reset the failure counter if the application naturally recovers and becomes healthy
+            if (stateService.HealthState == DiscordHealthState.Healthy)
+            {
+                _failedResetAttempts = 0;
+            }
+
             if (stateService.HealthState != DiscordHealthState.Offline ||
                 stateService.OfflineDuration < _criticalOfflineThreshold)
             {
@@ -46,18 +50,39 @@ public class DiscordWatchdogService(
                 continue;
             }
 
-            logger.LogWarning("Discord client has been offline for {Minutes} minutes. Attempting hard reset...", stateService.OfflineDuration.TotalMinutes);
+            logger.LogWarning("Discord client has been offline for {Minutes} minutes. Attempting client hard reset...", stateService.OfflineDuration.TotalMinutes);
 
             bool isApiReachable = await PingDiscordApiAsync(stoppingToken);
 
-            if (!isApiReachable)
+            if (isApiReachable)
             {
-                logger.LogWarning("Discord API is currently unreachable. Aborting hard reset. Will retry in the next cycle.");
+                logger.LogWarning("Discord API is currently unreachable. Aborting client hard reset. Will retry in the next cycle.");
                 continue;
             }
 
-            logger.LogInformation("Discord API is responding. Proceeding with hard reset sequence.");
-            await PerformHardResetAsync();
+            logger.LogInformation("Discord API is responding. Proceeding with client hard reset sequence.");
+
+            bool resetSuccess = await PerformHardResetAsync();
+
+            if (resetSuccess)
+            {
+                logger.LogInformation("Hard reset sequence completed successfully. Connection restored.");
+                _failedResetAttempts = 0;
+            }
+            else
+            {
+                _failedResetAttempts++;
+
+                if (_failedResetAttempts >= 3)
+                {
+                    // LogCritical translates to Fatal level in Serilog
+                    logger.LogCritical("Failed to restore Discord connection after {Attempts} consecutive hard reset attempts. Manual intervention may be required.", _failedResetAttempts);
+                }
+                else
+                {
+                    logger.LogWarning("Hard reset sequence finished, but client failed to connect. Attempt {Attempt}/3.", _failedResetAttempts);
+                }
+            }
         }
     }
 
@@ -79,7 +104,7 @@ public class DiscordWatchdogService(
         }
     }
 
-    private async Task PerformHardResetAsync()
+    private async Task<bool> PerformHardResetAsync()
     {
         try
         {
@@ -87,31 +112,42 @@ public class DiscordWatchdogService(
             if (string.IsNullOrWhiteSpace(token))
             {
                 logger.LogCritical("Discord API token is missing in the configuration. Cannot restart client.");
-                return;
+                return false;
             }
 
             // Shutdown sequence
-            logger.LogInformation("Stopping gateway connection...");
-            await client.StopAsync();
+            logger.LogInformation("Initiating Discord client shutdown sequence...");
 
-            logger.LogInformation("Logging out to clear internal state...");
+            await client.StopAsync();
             await client.LogoutAsync();
 
             // Safe delay to ensure all resources are cleaned up before restarting
             await Task.Delay(1000);
 
             // Startup sequence
-            logger.LogInformation("Logging in with clean state...");
-            await client.LoginAsync(TokenType.Bot, token);
+            logger.LogInformation("Starting Discord client startup sequence...");
 
-            logger.LogInformation("Starting gateway connection...");
+            await client.LoginAsync(TokenType.Bot, token);
             await client.StartAsync();
 
-            logger.LogInformation("Resuscitation protocol completed successfully.");
+            // Verification loop: Give the client up to 10 seconds to establish the WebSocket connection
+            for (int i = 0; i < 10; i++)
+            {
+                await Task.Delay(1000);
+
+                if (client.ConnectionState == ConnectionState.Connected)
+                {
+                    return true;
+                }
+            }
+
+            logger.LogWarning("Discord client startup sequence finished, but connection state is not 'Connected' after timeout period.");
+            return false;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "A critical error occurred during the resuscitation protocol");
+            logger.LogError(ex, "A critical error occurred during hard reset sequence");
+            return false;
         }
     }
 }
