@@ -176,6 +176,10 @@ internal static class HostingExtensions
         services.AddSingleton<IApiSecurityStore, ApiSecurityStore>();
         services.AddSingleton<IEncryptionService>(sp => new EncryptionService(masterKey, sp.GetRequiredService<ILogger<EncryptionService>>()));
         services.AddSingleton<DiscordStateService>();
+
+        services.AddHttpClient();
+        services.AddHostedService<DiscordWatchdogService>();
+
         services.AddSingleton<FirstRunAdminSetupService>();
         services.AddHttpClient<ZabbixService>();
         services.AddSingleton<ZabbixService>();

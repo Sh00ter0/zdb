@@ -7,12 +7,11 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Services.Discord;
 
-
-
 public class DiscordStateService
 {
     private readonly DiscordSocketClient _client;
     private readonly ILogger _apiLog;
+
     private DateTimeOffset? _disconnectedAt;
     private readonly TimeSpan _gracePeriod = TimeSpan.FromSeconds(30);
 
@@ -50,6 +49,10 @@ public class DiscordStateService
     public bool IsOperational =>
         HealthState is DiscordHealthState.Healthy or DiscordHealthState.Degraded;
 
+    public TimeSpan OfflineDuration => _disconnectedAt.HasValue
+        ? DateTimeOffset.UtcNow - _disconnectedAt.Value
+        : TimeSpan.Zero;
+
     private Task OnReady()
     {
         _disconnectedAt = null;
@@ -66,14 +69,16 @@ public class DiscordStateService
 
     private Task OnDisconnected(Exception ex)
     {
-        _disconnectedAt = DateTimeOffset.UtcNow;
+        _disconnectedAt ??= DateTimeOffset.UtcNow;
+
         _apiLog.Warning("Discord gateway disconnected. Reason: {Reason}", ex?.Message ?? "Unknown");
         return Task.CompletedTask;
     }
 
     private Task OnLoggedOut()
     {
-        _disconnectedAt = DateTimeOffset.UtcNow;
+        _disconnectedAt ??= DateTimeOffset.UtcNow;
+
         _apiLog.Warning("Discord client logged out");
         return Task.CompletedTask;
     }
