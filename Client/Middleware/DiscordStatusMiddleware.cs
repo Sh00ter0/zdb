@@ -15,9 +15,12 @@ namespace Client.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            if (!_stateService.IsReady)
+            if (!_stateService.IsOperational)
             {
-                throw new ProblemException("Discord Not Ready", "The Discord client is not ready yet. Please try again later.", StatusCodes.Status503ServiceUnavailable);
+                throw new ProblemException(
+                    "Discord Temporarily Unavailable",
+                    $"The Discord gateway is currently offline. State: { _stateService.HealthState}",
+                    StatusCodes.Status503ServiceUnavailable);
             }
             await _next(context);
         }

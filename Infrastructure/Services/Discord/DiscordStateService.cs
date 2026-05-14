@@ -1,37 +1,62 @@
-﻿using Discord.WebSocket;
-using Serilog;
+﻿using Discord;
+using Discord.WebSocket;
+using Domain.Enums;
+using Infrastructure.Mediators;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace Infrastructure.Services.Discord
+namespace Infrastructure.Services.Discord;
+
+public class DiscordStateService
 {
-    public class DiscordStateService
+    private readonly DiscordSocketClient _client;
+    private readonly ILogger<DiscordStateService> _logger;
+    private readonly DiscordStateMediator _mediator;
+    public bool IsOperational => _mediator.HealthState == DiscordHealthState.Healthy;
+    public DiscordHealthState HealthState => _mediator.HealthState;
+
+    public DiscordStateService(DiscordSocketClient client, ILogger<DiscordStateService> logger, DiscordStateMediator mediator)
     {
-        private readonly ILogger _apiLog;
-        public bool IsReady { get; private set; }
+        _client = client;
+        _logger = logger;
+        _mediator = mediator;
 
-        public DiscordStateService(DiscordSocketClient client)
-        {
-            _apiLog = Log.ForContext("Source", "Discord");
+        _client.Ready += OnReady;
+        _client.Disconnected += OnDisconnected;
+        _client.Connected += OnConnected;
+        _client.LoggedOut += OnLoggedOut;
+    }
 
-            client.Ready += () =>
-            {
-                IsReady = true;
-                _apiLog.Information("The client has connected to the Discord servers; API access has been granted");
-                return Task.CompletedTask;
-            };
+    private Task OnReady()
+    {
+        _logger.LogInformation("Discord gateway is ready and operational");
+        _mediator.ChangeState(DiscordHealthState.Healthy);
 
-            client.Disconnected += (ex) =>
-            {
-                IsReady = false;
-                _apiLog.Warning("The client has lost connection to the Discord servers; API access has been suspended. Reason: {Message}", ex.Message);
-                return Task.CompletedTask;
-            };
+        return Task.CompletedTask;
+    }
 
-            client.LoggedOut += () =>
-            {
-                IsReady = false;
-                _apiLog.Fatal("The client has lost connection to the Discord servers (logged out); API access has been suspended");
-                return Task.CompletedTask;
-            };
-        }
+    private Task OnConnected()
+    {
+        _logger.LogInformation("Discord gateway connection established");
+        _mediator.ChangeState(DiscordHealthState.Healthy);
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnDisconnected(Exception ex)
+    {
+        _logger.LogWarning("Discord gateway disconnected. Reason: {Reason}", ex?.Message ?? "Unknown");
+        _mediator.ChangeState(DiscordHealthState.Offline);
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnLoggedOut()
+    {
+        _logger.LogWarning("Discord client logged out");
+        _mediator.ChangeState(DiscordHealthState.Offline);
+
+        return Task.CompletedTask;
     }
 }
