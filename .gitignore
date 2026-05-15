@@ -364,3 +364,7 @@ FodyWeavers.xsd
 /Tests/Tests.csproj
 Client/appsettings.Development.json
 /Client/Properties/launchSettings.json
+.idea/.idea.DiscordZabbixBridge/.idea/discord.xml
+.ai/mcp/mcp.json
+.idea/.idea.DiscordZabbixBridge/.idea/indexLayout.xml
+.idea/.idea.DiscordZabbixBridge/.idea/workspace.xml

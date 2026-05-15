@@ -1,12 +1,11 @@
 ﻿using Application.Services.Discord;
 using Discord;
-using Discord.Interactions;
 using Infrastructure.Exceptions;
 using Infrastructure.Models.Modals;
 using Infrastructure.Services.Zabbix;
 using Microsoft.Extensions.Logging;
 
-namespace Infrastructure.Discord.SlashCommands.Commands
+namespace Infrastructure.Discord.SlashCommands.Commands.Controllers.Zabbix
 {
     public class ZabbixDirectMessageController(
         ILogger<ZabbixDirectMessageController> logger,

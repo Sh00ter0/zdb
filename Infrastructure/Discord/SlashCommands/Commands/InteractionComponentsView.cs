@@ -1,10 +1,16 @@
-﻿using Discord;
+using Discord;
 using Discord.Interactions;
 using Infrastructure.Attributes;
 using Infrastructure.Discord.Autocomplete;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.Client;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.WellKnownTargets;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.System;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Zabbix;
 using Infrastructure.Models.Modals;
 
-namespace Infrastructure.Discord.SlashCommands.Commands
+namespace Infrastructure.Discord.SlashCommands.Commands;
+
+public class InteractionComponentsView
 {
     [Group("api", "Manage API settings")]
     public class ApiCommandsView : InteractionModuleBase<AppInteractionContext>
@@ -86,5 +92,58 @@ namespace Infrastructure.Discord.SlashCommands.Commands
             public async Task HandleTargetRenameModalAsync(long clientId, ulong targetDiscordId, SingleInputModal modal)
                 => await controller.HandleTargetRenameModalAsync(Context, clientId, targetDiscordId, modal);
         }
+    }
+    
+    [Group("system", "System-level commands and interactions")]
+    public class SystemCommandsView : InteractionModuleBase<AppInteractionContext>
+    {
+        [Group("administration", "Commands for managing system administration")]
+        public class AdministrationCommandsView(AdministrationCommandsController controller) : InteractionModuleBase<AppInteractionContext>
+        {
+            [RequirePermission("system.admins.write")]
+            [SlashCommand("create-administrator", "Registers a new system administrator.")]
+            public async Task CreateAdministratorAsync(IUser user, int roleId)
+                => await controller.CreateAdministratorAsync(Context, user, roleId);
+
+            [RequirePermission("system.admins.read")]
+            [SlashCommand("list", "Displays a paginated list of all system administrators.")]
+            public async Task ListAdministratorsAsync()
+                => await controller.ListAdministratorsAsync(Context);
+
+            [RequirePermission("system.admins.read")]
+            [SlashCommand("manage-administrator", "Opens the management panel for an administrator.")]
+            public async Task ManageAdministratorAsync(IUser targetUser)
+                => await controller.ManageAdministratorAsync(Context, targetUser);
+
+            // Buttons Router
+            [RequirePermission("system.admins.read")]
+            [ComponentInteraction("admin_btn:*:*", ignoreGroupNames: true)]
+            public async Task HandleAdminButtonAsync(ulong targetDiscordId, string actionId)
+                => await controller.ProcessAdminActionAsync(Context, targetDiscordId, actionId, null);
+
+            // Select Menus Router
+            [RequirePermission("system.admins.read")]
+            [ComponentInteraction("admin_select:*:*", ignoreGroupNames: true)]
+            public async Task HandleAdminSelectAsync(ulong targetDiscordId, string actionId, string[] selectedValues)
+                => await controller.ProcessAdminActionAsync(Context, targetDiscordId, actionId, selectedValues);
+        }
+    }
+    
+    public class ZabbixDirectMessageView(ZabbixDirectMessageController controller) : InteractionModuleBase<AppInteractionContext>
+    {
+        // Buttons Router
+        [ComponentInteraction("zabbix_btn:*:*:*", ignoreGroupNames: true)]
+        public async Task HandleZabbixButtonAsync([RequireActiveApiClient] long apiId, string eventId, string actionId)
+            => await controller.ProcessZabbixActionAsync(Context, apiId, eventId, actionId, null);
+
+        // Select Menus Router
+        [ComponentInteraction("zabbix_select:*:*:*", ignoreGroupNames: true)]
+        public async Task HandleZabbixSelectAsync([RequireActiveApiClient] long apiId, string eventId, string actionId, string[] selectedValues)
+            => await controller.ProcessZabbixActionAsync(Context, apiId, eventId, actionId, selectedValues);
+
+        // Modals Router
+        [ModalInteraction("zabbix_modal_comment:*:*", ignoreGroupNames: true)]
+        public async Task HandleZabbixCommentModalAsync([RequireActiveApiClient] long apiId, string eventId, SingleInputModal modal)
+            => await controller.HandleZabbixCommentModalAsync(Context, apiId, eventId, modal);
     }
 }

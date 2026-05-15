@@ -2,7 +2,6 @@
 using Application.Services.Discord;
 using Application.Services.Pagination;
 using Discord;
-using Discord.Interactions;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Enums;
@@ -11,7 +10,7 @@ using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Infrastructure.Discord.SlashCommands.Commands
+namespace Infrastructure.Discord.SlashCommands.Commands.Controllers.System
 {
     public class AdministrationCommandsController(
         ILogger<AdministrationCommandsController> logger,

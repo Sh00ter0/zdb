@@ -35,6 +35,12 @@ using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Net;
 using System.Threading.RateLimiting;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.Client;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.WellKnownTargets;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.System;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Zabbix;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
