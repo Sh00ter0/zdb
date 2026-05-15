@@ -1,4 +1,5 @@
-﻿using Application.Services.Discord;
+﻿using Application.Common.Constants;
+using Application.Services.Discord;
 using Discord;
 using Infrastructure.Exceptions;
 using Infrastructure.Models.Modals;
@@ -15,37 +16,42 @@ namespace Infrastructure.Discord.SlashCommands.Commands.Controllers.Zabbix
         public async Task ProcessZabbixActionAsync(AppInteractionContext context, long apiId, string eventId, string actionId, string[]? selectedValues)
         {
             var zabbixEvent = await zabbixService.GetEventDetailsAsync(apiId, eventId);
-            if (zabbixEvent == null && actionId != "manage") throw new UserVisibleException("Event data missing.");
+            if (zabbixEvent == null && actionId != DiscordComponentActions.Manage) throw new UserVisibleException("Event data missing.");
+            
             bool currentAckState = zabbixEvent?.Acknowledged == 1;
             int currentSev = zabbixEvent?.Severity ?? 0;
 
             string action = actionId;
             if (selectedValues?.Length > 0)
-                action = actionId == "ack" ? $"ack_{selectedValues[0]}" : $"sev_{selectedValues[0]}";
+            {
+                action = actionId == DiscordComponentActions.AckActionPrefix 
+                    ? $"{DiscordComponentActions.AckActionPrefix}_{selectedValues[0]}" 
+                    : $"{DiscordComponentActions.SevActionPrefix}_{selectedValues[0]}";
+            }
 
             switch (action)
             {
-                case "manage":
+                case DiscordComponentActions.Manage:
                     await context.Interaction.DeferAsync(ephemeral: true);
                     await context.Interaction.FollowupAsync(components: BuildPanel(apiId, eventId, currentAckState, currentSev), ephemeral: true, flags: MessageFlags.ComponentsV2);
                     break;
 
-                case "ack_true":
-                case "ack_false":
+                case DiscordComponentActions.AckTrue:
+                case DiscordComponentActions.AckFalse:
                     await context.Interaction.DeferAsync(ephemeral: true);
-                    bool newAckState = action == "ack_true";
+                    bool newAckState = action == DiscordComponentActions.AckTrue;
                     if (!await zabbixService.AcknowledgeEventAsync(apiId, eventId, null, newAckState, false, currentSev)) throw new UserVisibleException("Zabbix API rejected the request.");
                     await ((IComponentInteraction)context.Interaction).ModifyOriginalResponseAsync(msg => msg.Components = BuildPanel(apiId, eventId, newAckState, currentSev));
                     break;
 
-                case string s when s.StartsWith("sev_"):
+                case string s when s.StartsWith($"{DiscordComponentActions.SevActionPrefix}_"):
                     await context.Interaction.DeferAsync(ephemeral: true);
-                    int newSev = int.Parse(s.Split('_')[1]);
+                    int newSev = int.Parse(s[(DiscordComponentActions.SevActionPrefix.Length + 1)..]); 
                     if (!await zabbixService.AcknowledgeEventAsync(apiId, eventId, null, currentAckState, false, newSev)) throw new UserVisibleException("Zabbix API rejected the request.");
                     await ((IComponentInteraction)context.Interaction).ModifyOriginalResponseAsync(msg => msg.Components = BuildPanel(apiId, eventId, currentAckState, newSev));
                     break;
 
-                case "comment":
+                case DiscordComponentActions.Comment:
                     await context.Interaction.RespondWithModalAsync(discordUiService.CreateSingleInputModal($"zabbix_modal_comment:{apiId}:{eventId}", "Add Comment", "Comment", "Enter your comment...", 500, isParagraph: true));
                     break;
             }
@@ -67,9 +73,9 @@ namespace Infrastructure.Discord.SlashCommands.Commands.Controllers.Zabbix
         private MessageComponent BuildPanel(long apiId, string eventId, bool ackState, int sev)
         {
             return discordUiService.CreateZabbixManagementPanel(eventId,
-                discordUiService.GetZabbixAckMenuBuilder($"zabbix_select:{apiId}:{eventId}:ack", ackState),
-                discordUiService.GetZabbixSeverityMenuBuilder($"zabbix_select:{apiId}:{eventId}:sev", sev),
-                new ButtonBuilder().WithCustomId($"zabbix_btn:{apiId}:{eventId}:comment").WithLabel("Add Comment").WithStyle(ButtonStyle.Primary).WithEmote(new Emoji("💬")));
+                discordUiService.GetZabbixAckMenuBuilder($"zabbix_select:{apiId}:{eventId}:{DiscordComponentActions.AckActionPrefix}", ackState),
+                discordUiService.GetZabbixSeverityMenuBuilder($"zabbix_select:{apiId}:{eventId}:{DiscordComponentActions.SevActionPrefix}", sev),
+                new ButtonBuilder().WithCustomId($"zabbix_btn:{apiId}:{eventId}:{DiscordComponentActions.Comment}").WithLabel("Add Comment").WithStyle(ButtonStyle.Primary).WithEmote(new Emoji("💬")));
         }
     }
 }

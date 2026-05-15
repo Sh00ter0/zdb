@@ -1,3 +1,4 @@
+using Application.Common.Constants;
 using Application.Repositories;
 using Application.Services.API;
 using Application.Services.Discord;
@@ -94,21 +95,21 @@ public class WellKnownTargetsController(
                     break;
 
                 case nameof(AllowedTargetModifyingAction.SynchronizeTargetData):
-                    await UpdateWithWarningAsync(context, client, target, "⚠️ `WARNING`\nThis action will force a resynchronization with Discord's current data. If the channel type is no longer supported, the target will be automatically removed.\n\n**Proceed?**", $"target_btn:{clientId}:{targetDiscordId}:sync_confirm");
+                    await UpdateWithWarningAsync(context, client, target, "⚠️ `WARNING`\nThis action will force a resynchronization with Discord's current data. If the channel type is no longer supported, the target will be automatically removed.\n\n**Proceed?**", $"target_btn:{clientId}:{targetDiscordId}:{DiscordComponentActions.SyncConfirm}");
                     break;
 
                 case nameof(AllowedTargetModifyingAction.Remove):
-                    await UpdateWithWarningAsync(context, client, target, "🛑 `WARNING`\nThis will permanently delete this target from the database.\n\n**Proceed?**", $"target_btn:{clientId}:{targetDiscordId}:remove_confirm");
+                    await UpdateWithWarningAsync(context, client, target, "🛑 `WARNING`\nThis will permanently delete this target from the database.\n\n**Proceed?**", $"target_btn:{clientId}:{targetDiscordId}:{DiscordComponentActions.RemoveConfirm}");
                     break;
 
-                case "cp_true":
-                case "cp_false":
-                    target.AutoCrosspost = action == "cp_true";
+                case DiscordComponentActions.CrosspostTrue:
+                case DiscordComponentActions.CrosspostFalse:
+                    target.AutoCrosspost = action == DiscordComponentActions.CrosspostTrue;
                     await targetRepository.UpdateAsync(target);
                     await RefreshUiAsync(context, client, target, $"Auto-Publish mode has been updated to **{target.AutoCrosspost}**.");
                     break;
 
-                case "sync_confirm":
+                case DiscordComponentActions.SyncConfirm:
                     await context.Interaction.DeferAsync(ephemeral: true);
                     IChannel? rChannel = target.ChannelType != TextChannelType.DirectMessage ? (context.Client.GetChannel(targetDiscordId) as IChannel ?? await context.Client.Rest.GetChannelAsync(targetDiscordId)) : null;
                     IUser? rUser = target.ChannelType == TextChannelType.DirectMessage ? (context.Client.GetUser(targetDiscordId) as IUser ?? await context.Client.Rest.GetUserAsync(targetDiscordId)) : null;
@@ -118,7 +119,7 @@ public class WellKnownTargetsController(
                     await context.Interaction.FollowupAsync("Synchronization complete.", ephemeral: true);
                     break;
 
-                case "remove_confirm":
+                case DiscordComponentActions.RemoveConfirm:
                     IUser? targetUser = target.ChannelType == TextChannelType.DirectMessage ? await context.Client.Rest.GetUserAsync(target.TargetId) : null;
                     await targetRepository.DeleteByIdAsync(clientId, target.Id);
 
@@ -128,7 +129,7 @@ public class WellKnownTargetsController(
                     await ((IComponentInteraction)context.Interaction).UpdateAsync(msg => msg.Components = discordUiService.CreateStandardContainer("Target Removed", $"The target has been permanently removed from client `{client.Name}`.", Color.Red));
                     break;
 
-                case "cancel":
+                case DiscordComponentActions.Cancel:
                 default:
                     await RefreshUiAsync(context, client, target);
                     break;
@@ -174,13 +175,13 @@ public class WellKnownTargetsController(
             await UpdateInteractionComponentsAsync(context, discordUiService.CreateTargetOverviewContainer(client.Name, target, cb =>
                 cb.WithTextDisplay(text).WithActionRow(row => {
                     row.AddComponent(new ButtonBuilder().WithCustomId(confirmId).WithLabel("Confirm").WithStyle(ButtonStyle.Danger).WithEmote(emoteCache.GetEmote("UI_ICON_CHECK_WHITE")));
-                    row.AddComponent(new ButtonBuilder().WithCustomId($"target_btn:{client.Id}:{target.TargetId}:cancel").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO")));
+                    row.AddComponent(new ButtonBuilder().WithCustomId($"target_btn:{client.Id}:{target.TargetId}:{DiscordComponentActions.Cancel}").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO")));
                 })));
         }
 
         private async Task UpdateWithSubmenuAsync(AppInteractionContext context, IntegrationClients client, KnownDeliveryTargets target, SelectMenuBuilder submenu)
         {
             await UpdateInteractionComponentsAsync(context, discordUiService.CreateTargetOverviewContainer(client.Name, target, cb =>
-                cb.WithActionRow(row => row.AddComponent(submenu)).WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"target_btn:{client.Id}:{target.TargetId}:cancel").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
+                cb.WithActionRow(row => row.AddComponent(submenu)).WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"target_btn:{client.Id}:{target.TargetId}:{DiscordComponentActions.Cancel}").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
         }
     }

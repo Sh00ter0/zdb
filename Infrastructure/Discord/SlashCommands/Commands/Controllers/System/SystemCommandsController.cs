@@ -1,4 +1,5 @@
-﻿using Application.Repositories;
+﻿using Application.Common.Constants;
+using Application.Repositories;
 using Application.Services.Discord;
 using Application.Services.Pagination;
 using Discord;
@@ -79,6 +80,7 @@ namespace Infrastructure.Discord.SlashCommands.Commands.Controllers.System
                     {
                         var assignableRoles = await db.SystemRoles.Where(r => r.HierarchyWeight < context.Admin.Role.HierarchyWeight).OrderByDescending(r => r.HierarchyWeight).ToListAsync();
                         if (assignableRoles.Count == 0) throw new UserVisibleException("No roles available.");
+                        
                         await UpdateWithSubmenuAsync(context, targetAdmin, dUser!, discordUiService.GetSystemRoleMenuBuilder($"admin_select:{targetDiscordId}:set_role", targetAdmin.RoleId, assignableRoles));
                     }
                     break;
@@ -87,15 +89,15 @@ namespace Infrastructure.Discord.SlashCommands.Commands.Controllers.System
                     await UpdateWithSubmenuAsync(context, targetAdmin, dUser!, discordUiService.GetAdminStatusMenuBuilder($"admin_select:{targetDiscordId}:status", targetAdmin.IsActive));
                     break;
 
-                case "status_true":
-                case "status_false":
-                    targetAdmin.IsActive = action == "status_true";
+                case DiscordComponentActions.StatusTrue:
+                case DiscordComponentActions.StatusFalse:
+                    targetAdmin.IsActive = action == DiscordComponentActions.StatusTrue;
                     await adminRepository.UpdateAsync(targetAdmin);
                     try { await dUser!.SendMessageAsync(components: discordUiService.CreateStandardContainer("Account Update", $"Your account is now {(targetAdmin.IsActive ? "ACTIVE" : "SUSPENDED")}.", targetAdmin.IsActive ? AppColors.Success : AppColors.Error)); } catch { }
                     await RefreshUiAsync(context, targetAdmin, dUser!, $"Status updated to **{(targetAdmin.IsActive ? "ACTIVE" : "DISABLED")}**.");
                     break;
 
-                case "set_role":
+                case DiscordComponentActions.SetRole: 
                     int newRoleId = int.Parse(selectedValues![0]);
                     await using (var db = await dbFactory.CreateDbContextAsync())
                     {
@@ -109,7 +111,7 @@ namespace Infrastructure.Discord.SlashCommands.Commands.Controllers.System
                     await RefreshUiAsync(context, refreshedAdmin!, dUser!, "Role updated.");
                     break;
 
-                case "cancel":
+                case DiscordComponentActions.Cancel:
                 default:
                     await RefreshUiAsync(context, targetAdmin, dUser!);
                     break;
@@ -138,7 +140,7 @@ namespace Infrastructure.Discord.SlashCommands.Commands.Controllers.System
         private async Task UpdateWithSubmenuAsync(AppInteractionContext context, SystemAdministrators targetAdmin, IUser discordUser, SelectMenuBuilder submenu)
         {
             await UpdateInteractionComponentsAsync(context, discordUiService.CreateAdminOverviewContainer(targetAdmin, discordUser, cb =>
-                cb.WithActionRow(row => row.AddComponent(submenu)).WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"admin_btn:{targetAdmin.DiscordUserId}:cancel").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
+                cb.WithActionRow(row => row.AddComponent(submenu)).WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"admin_btn:{targetAdmin.DiscordUserId}:{DiscordComponentActions.Cancel}").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
         }
     }
 }

@@ -1,10 +1,9 @@
+using Application.Common.Constants;
 using Application.Repositories;
 using Application.Services.API;
 using Application.Services.Discord;
 using Application.Services.Pagination;
 using Discord;
-using Discord.WebSocket;
-using Domain.Constants;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Exceptions;
@@ -80,45 +79,45 @@ public class ClientCommandsController(
                     var targetEntities = await targetRepository.GetAllByClientIdAsync(client.Id);
                     if (targetEntities.Count == 0)
                     {
-                        await ((IComponentInteraction)context.Interaction).ModifyOriginalResponseAsync(msg => msg.Components = discordUiService.CreateApiClientOverviewContainer(client, cb => cb.WithTextDisplay("📝 **This client currently has no authorized targets.**").WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"client_btn:{clientId}:cancel").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
+                        await ((IComponentInteraction)context.Interaction).ModifyOriginalResponseAsync(msg => msg.Components = discordUiService.CreateApiClientOverviewContainer(client, cb => cb.WithTextDisplay("📝 **This client currently has no authorized targets.**").WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"client_btn:{clientId}:{DiscordComponentActions.Cancel}").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
                         return;
                     }
 
                     var items = targetEntities.Select(t => $"`{t.Name}`\n-# ├ **ID:** `{t.TargetId}`\n-# ├ **Type:** `{t.ChannelType.GetDisplayName()}`\n-# └ **Added:** <t:{((DateTimeOffset)t.CreatedAtUtc).ToUnixTimeSeconds()}:F>").ToList();
-                    string sessionId = paginationService.CreatePaginationSession($"Targets for: {client.Name}\n-# Total targets: {targetEntities.Count}", items, 1000, "\n\n", new ButtonBuilder().WithCustomId($"client_btn:{clientId}:cancel").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO")));
+                    string sessionId = paginationService.CreatePaginationSession($"Targets for: {client.Name}\n-# Total targets: {targetEntities.Count}", items, 1000, "\n\n", new ButtonBuilder().WithCustomId($"client_btn:{clientId}:{DiscordComponentActions.Cancel}").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO")));
                     var sessionData = paginationService.GetSessionData(sessionId);
 
                     await ((IComponentInteraction)context.Interaction).ModifyOriginalResponseAsync(msg => msg.Components = discordUiService.CreatePaginatedContainer(sessionData.Header, sessionData.Pages[0], 1, sessionData.Pages.Count, sessionId, customActionBtn: sessionData.CustomButton));
                     break;
 
                 case nameof(ApiClientModifyingAction.RenewApiKey):
-                    await UpdateWithWarningAsync(context, client, "⚠️ `WARNING`\nRenewing the API Key will **immediately invalidate the current key**. Any external system using the old key will lose access until updated.\n\n**Proceed?**", $"client_btn:{clientId}:renew_confirm");
+                    await UpdateWithWarningAsync(context, client, "⚠️ `WARNING`\nRenewing the API Key will **immediately invalidate the current key**. Any external system using the old key will lose access until updated.\n\n**Proceed?**", $"client_btn:{clientId}:{DiscordComponentActions.RenewConfirm}");
                     break;
 
                 case nameof(ApiClientModifyingAction.Remove):
-                    await UpdateWithWarningAsync(context, client, "🛑 `WARNING`\nThis will permanently delete this client and ALL associated targets from the database.\n\n**Proceed?**", $"client_btn:{clientId}:remove_confirm");
+                    await UpdateWithWarningAsync(context, client, "🛑 `WARNING`\nThis will permanently delete this client and ALL associated targets from the database.\n\n**Proceed?**", $"client_btn:{clientId}:{DiscordComponentActions.RemoveConfirm}");
                     break;
 
-                case "status_true":
-                case "status_false":
-                    client.IsActive = action == "status_true";
+                case DiscordComponentActions.StatusTrue:
+                case DiscordComponentActions.StatusFalse:
+                    client.IsActive = action == DiscordComponentActions.StatusTrue;
                     await apiClientRepository.UpdateAsync(client);
                     await RefreshUiAsync(context, client, $"Client status has been updated to: **{(client.IsActive ? "ACTIVE" : "DISABLED")}**.");
                     break;
 
-                case "renew_confirm":
+                case DiscordComponentActions.RenewConfirm:
                     await context.Interaction.DeferAsync(ephemeral: true);
                     var newKey = await apiSecurityStore.RenewApiKeyAsync(clientId);
                     var renewedClient = await apiClientRepository.GetByIdAsync(clientId);
-                    await ((IComponentInteraction)context.Interaction).ModifyOriginalResponseAsync(msg => msg.Components = discordUiService.CreateApiClientOverviewContainer(renewedClient!, cb => cb.WithTextDisplay($"🔒 **NEW API KEY GENERATED:**\n`{newKey}`\n\n*Important: Copy and store this key now.*").WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"client_btn:{clientId}:cancel").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
+                    await ((IComponentInteraction)context.Interaction).ModifyOriginalResponseAsync(msg => msg.Components = discordUiService.CreateApiClientOverviewContainer(renewedClient!, cb => cb.WithTextDisplay($"🔒 **NEW API KEY GENERATED:**\n`{newKey}`\n\n*Important: Copy and store this key now.*").WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"client_btn:{clientId}:{DiscordComponentActions.Cancel}").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
                     break;
 
-                case "remove_confirm":
+                case DiscordComponentActions.RemoveConfirm:
                     await apiClientRepository.DeleteAsync(clientId);
                     await ((IComponentInteraction)context.Interaction).UpdateAsync(msg => msg.Components = discordUiService.CreateStandardContainer("Client Removed", "Api client has been permanently removed.", Color.Red));
                     break;
 
-                case "cancel":
+                case DiscordComponentActions.Cancel:
                 default:
                     await RefreshUiAsync(context, client);
                     break;
@@ -174,13 +173,13 @@ public class ClientCommandsController(
             await UpdateInteractionComponentsAsync(context, discordUiService.CreateApiClientOverviewContainer(client, cb =>
                 cb.WithTextDisplay(text).WithActionRow(row => {
                     row.AddComponent(new ButtonBuilder().WithCustomId(confirmId).WithLabel("Confirm").WithStyle(ButtonStyle.Danger).WithEmote(emoteCache.GetEmote("UI_ICON_CHECK_WHITE")));
-                    row.AddComponent(new ButtonBuilder().WithCustomId($"client_btn:{client.Id}:cancel").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO")));
+                    row.AddComponent(new ButtonBuilder().WithCustomId($"client_btn:{client.Id}:{DiscordComponentActions.Cancel}").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO")));
                 })));
         }
 
         private async Task UpdateWithSubmenuAsync(AppInteractionContext context, IntegrationClients client, SelectMenuBuilder submenu)
         {
             await UpdateInteractionComponentsAsync(context, discordUiService.CreateApiClientOverviewContainer(client, cb =>
-                cb.WithActionRow(row => row.AddComponent(submenu)).WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"client_btn:{client.Id}:cancel").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
+                cb.WithActionRow(row => row.AddComponent(submenu)).WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"client_btn:{client.Id}:{DiscordComponentActions.Cancel}").WithLabel("Return").WithStyle(ButtonStyle.Secondary).WithEmote(emoteCache.GetEmote("UI_ICON_UNDO"))))));
         }
     }

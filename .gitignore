@@ -368,3 +368,6 @@ Client/appsettings.Development.json
 .ai/mcp/mcp.json
 .idea/.idea.DiscordZabbixBridge/.idea/indexLayout.xml
 .idea/.idea.DiscordZabbixBridge/.idea/workspace.xml
+.idea/.idea.DiscordZabbixBridge/.idea/vcs.xml
+.idea/.idea.DiscordZabbixBridge/.idea/.name
+.idea/.idea.DiscordZabbixBridge/.idea/projectSettingsUpdater.xml

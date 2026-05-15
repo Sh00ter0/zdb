@@ -1,4 +1,5 @@
-﻿using Application.Common.Zabbix;
+﻿using Application.Common.Constants;
+using Application.Common.Zabbix;
 using Application.Services.Discord;
 using Discord;
 using Discord.WebSocket;
@@ -129,7 +130,8 @@ namespace Infrastructure.Services.Discord
             if (isDM && payload.ControlMenu == 1 && payload.EventValue != 0 && payload.EventSource != 1 && payload.EventSource != 2)
             {
                 var pulseIcon = _emoteCache.GetEmote("UI_ICON_PULSE");
-                containerBuilder.WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"zabbix_action:{apiClientId}:{payload.EventId}:manage").WithLabel("Take action").WithStyle(ButtonStyle.Primary).WithEmote(pulseIcon)));
+                // Using Manage constant
+                containerBuilder.WithActionRow(row => row.AddComponent(new ButtonBuilder().WithCustomId($"zabbix_action:{apiClientId}:{payload.EventId}:{DiscordComponentActions.Manage}").WithLabel("Take action").WithStyle(ButtonStyle.Primary).WithEmote(pulseIcon)));
             }
             return new ComponentBuilderV2().WithContainer(containerBuilder).Build();
         }
@@ -217,8 +219,8 @@ namespace Infrastructure.Services.Discord
         public SelectMenuBuilder GetClientStatusSelectMenuBuilder(string customId, bool currentState)
         {
             return new SelectMenuBuilder().WithCustomId(customId).WithPlaceholder("Select client status...")
-                .AddOption("Enabled", "status_true", "Client is active and processing requests", isDefault: currentState, emote: _emoteCache.GetEmote("UI_ICON_BULB_ON"))
-                .AddOption("Disabled", "status_false", "Client is inactive and will reject requests", isDefault: !currentState, emote: _emoteCache.GetEmote("UI_ICON_BULB_OFF"));
+                .AddOption("Enabled", DiscordComponentActions.StatusTrue, "Client is active and processing requests", isDefault: currentState, emote: _emoteCache.GetEmote("UI_ICON_BULB_ON"))
+                .AddOption("Disabled", DiscordComponentActions.StatusFalse, "Client is inactive and will reject requests", isDefault: !currentState, emote: _emoteCache.GetEmote("UI_ICON_BULB_OFF"));
         }
 
         public MessageComponent CreateTargetOverviewContainer(string clientName, KnownDeliveryTargets target, Action<ContainerBuilder>? appendComponents = null)
@@ -276,8 +278,8 @@ namespace Infrastructure.Services.Discord
         public SelectMenuBuilder GetCrosspostSelectMenuBuilder(string customId, bool currentState)
         {
             return new SelectMenuBuilder().WithCustomId(customId).WithPlaceholder("Select auto-publish mode...")
-                .AddOption("Enable Auto-Publish", "cp_true", "Messages will be automatically published", isDefault: currentState, emote: _emoteCache.GetEmote("UI_ICON_CHECK"))
-                .AddOption("Disable Auto-Publish", "cp_false", "Messages will NOT be automatically published", isDefault: !currentState, emote: _emoteCache.GetEmote("UI_ICON_X"));
+                .AddOption("Enable Auto-Publish", DiscordComponentActions.CrosspostTrue, "Messages will be automatically published", isDefault: currentState, emote: _emoteCache.GetEmote("UI_ICON_CHECK"))
+                .AddOption("Disable Auto-Publish", DiscordComponentActions.CrosspostFalse, "Messages will NOT be automatically published", isDefault: !currentState, emote: _emoteCache.GetEmote("UI_ICON_X"));
         }
 
         public MessageComponent CreateAdminOverviewContainer(SystemAdministrators adminEntity, IUser discordUser, Action<ContainerBuilder>? appendComponents = null)
@@ -345,8 +347,8 @@ namespace Infrastructure.Services.Discord
         public SelectMenuBuilder GetAdminStatusMenuBuilder(string customId, bool currentState)
         {
             return new SelectMenuBuilder().WithCustomId(customId).WithPlaceholder("Select administrator status...")
-                .AddOption("Enable Administrator", "status_true", "Administrator can issue bot commands.", isDefault: currentState, emote: _emoteCache.GetEmote("UI_ICON_USER_CHECK"))
-                .AddOption("Disable Administrator", "status_false", "Administrator is blocked from bot interaction.", isDefault: !currentState, emote: _emoteCache.GetEmote("UI_ICON_USER_LOCK"));
+                .AddOption("Enable Administrator", DiscordComponentActions.StatusTrue, "Administrator can issue bot commands.", isDefault: currentState, emote: _emoteCache.GetEmote("UI_ICON_USER_CHECK"))
+                .AddOption("Disable Administrator", DiscordComponentActions.StatusFalse, "Administrator is blocked from bot interaction.", isDefault: !currentState, emote: _emoteCache.GetEmote("UI_ICON_USER_LOCK"));
         }
     }
 }
