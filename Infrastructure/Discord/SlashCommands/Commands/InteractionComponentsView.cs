@@ -1,3 +1,5 @@
+using Application.Discord.Panels.Core;
+using Application.Repositories;
 using Discord;
 using Discord.Interactions;
 using Infrastructure.Attributes;
@@ -6,7 +8,12 @@ using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.Client;
 using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.WellKnownTargets;
 using Infrastructure.Discord.SlashCommands.Commands.Controllers.System;
 using Infrastructure.Discord.SlashCommands.Commands.Controllers.Zabbix;
+using Infrastructure.Exceptions;
 using Infrastructure.Models.Modals;
+using Infrastructure.Persistence.Repositories;
+using Microsoft.AspNetCore.Components.RenderTree;
+using System;
+using System.Threading.Tasks;
 
 namespace Infrastructure.Discord.SlashCommands.Commands;
 
@@ -18,6 +25,8 @@ public class InteractionComponentsView
         [Group("client", "Manage API client settings")]
         public class ClientCommandsView(ClientCommandsController controller) : InteractionModuleBase<AppInteractionContext>
         {
+            public IServiceProvider ServiceProvider { get; set; } = null!;
+
             [RequirePermission("api.clients.write")]
             [SlashCommand("create", "Creates a new API client and returns the generated API key")]
             public async Task CreateApiClientAsync(string clientName, string zabbixApiUrl, string zabbixApiToken)
@@ -28,30 +37,7 @@ public class InteractionComponentsView
             public async Task ManageApiClientAsync(
                 [Summary("client", "Start typing to search for an API client...")]
                 [Autocomplete(typeof(ApiClientAutocompleteHandler))] string clientName)
-                => await controller.ManageApiClientAsync(Context, clientName);
-
-            // Buttons Router
-            [RequirePermission("api.clients.write")]
-            [ComponentInteraction("client_btn:*:*", ignoreGroupNames: true)]
-            public async Task HandleClientButtonAsync(long clientId, string actionId)
-                => await controller.ProcessClientActionAsync(Context, clientId, actionId, null);
-
-            // Select Menus Router
-            [RequirePermission("api.clients.write")]
-            [ComponentInteraction("client_select:*:*", ignoreGroupNames: true)]
-            public async Task HandleClientSelectAsync(long clientId, string actionId, string[] selectedValues)
-                => await controller.ProcessClientActionAsync(Context, clientId, actionId, selectedValues);
-
-            // Modals Router
-            [RequirePermission("api.clients.write")]
-            [ModalInteraction("client_modal_rename:*", ignoreGroupNames: true)]
-            public async Task HandleClientRenameModalAsync(long clientId, SingleInputModal modal)
-                => await controller.HandleClientRenameModalAsync(Context, clientId, modal);
-
-            [RequirePermission("api.clients.write")]
-            [ModalInteraction("client_modal_zabbix:*", ignoreGroupNames: true)]
-            public async Task HandleClientZabbixModalAsync(long clientId, DualInputModal modal)
-                => await controller.HandleClientZabbixModalAsync(Context, clientId, modal);
+                => await controller.ManageApiClientAsync(Context, ServiceProvider, clientName);
         }
 
         [Group("known-target", "Manage well-known targets for API clients")]
@@ -93,7 +79,7 @@ public class InteractionComponentsView
                 => await controller.HandleTargetRenameModalAsync(Context, clientId, targetDiscordId, modal);
         }
     }
-    
+
     [Group("system", "System-level commands and interactions")]
     public class SystemCommandsView : InteractionModuleBase<AppInteractionContext>
     {
@@ -128,7 +114,7 @@ public class InteractionComponentsView
                 => await controller.ProcessAdminActionAsync(Context, targetDiscordId, actionId, selectedValues);
         }
     }
-    
+
     public class ZabbixDirectMessageView(ZabbixDirectMessageController controller) : InteractionModuleBase<AppInteractionContext>
     {
         // Buttons Router

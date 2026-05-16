@@ -1,4 +1,17 @@
 ﻿using Application.Common.API;
+using Application.Discord.Panels.ClientPanel;
+using Application.Discord.Panels.ClientPanel.Actions;
+using Application.Discord.Panels.Core;
+using Application.Discord.Panels.Core.Orchestration;
+using Application.Discord.Panels.LayoutBuilders;
+using Application.Discord.Panels.LayoutBuilders.ClientPanel;
+using Application.Discord.Panels.Middleware;
+using Application.Discord.Panels.Modals;
+using Application.Discord.Panels.Modals.ClientPanel;
+using Application.Discord.Panels.Rendering;
+using Application.Discord.Panels.Rendering.ClientPanel;
+using Application.Discord.Panels.Rendering.LayoutMappers;
+using Application.Discord.Panels.Rendering.Shared;
 using Application.Repositories;
 using Application.Services.API;
 using Application.Services.Discord;
@@ -17,6 +30,12 @@ using Discord.WebSocket;
 using Domain.Enums;
 using Infrastructure.Discord.Events;
 using Infrastructure.Discord.SlashCommands.Commands;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.Client;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.WellKnownTargets;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.System;
+using Infrastructure.Discord.SlashCommands.Commands.Controllers.Zabbix;
 using Infrastructure.Logging;
 using Infrastructure.Mediators;
 using Infrastructure.Models;
@@ -35,12 +54,6 @@ using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Net;
 using System.Threading.RateLimiting;
-using Infrastructure.Discord.SlashCommands.Commands.Controllers;
-using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api;
-using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.Client;
-using Infrastructure.Discord.SlashCommands.Commands.Controllers.Api.WellKnownTargets;
-using Infrastructure.Discord.SlashCommands.Commands.Controllers.System;
-using Infrastructure.Discord.SlashCommands.Commands.Controllers.Zabbix;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -202,6 +215,99 @@ internal static class HostingExtensions
         services.AddSingleton<IIntegrationClientRepository, ApiClientRepository>();
         services.AddSingleton<IKnownDeliveryTargetRepository, ApiTargetRepository>();
         services.AddSingleton<ISystemAdministratorRepository, BotAdminRepository>();
+
+
+        // +++ // Start
+
+        services.AddSingleton<IInteractionCodec, CompactInteractionCodec>();
+        services.AddSingleton<IPanelRegistry>(sp =>
+        {
+            var panels = sp.GetServices<IConfigPanel>();
+            return new PanelRegistry(panels);
+        });
+
+
+        // --- ORCHESTRATION ---
+        services.AddSingleton<InteractionPipeline>();
+        services.AddSingleton<ModalCoordinator>();
+        services.AddSingleton<InteractionResponseHandler>();
+        services.AddSingleton<IInteractionErrorBoundary, DefaultErrorBoundary>(); // NEW: Error Boundary
+        services.AddSingleton<InteractionDispatcher>();
+
+        // --- MIDDLEWARES ---
+        // Note: Order of registration dictates the execution pipeline
+        services.AddSingleton<IPanelMiddleware, LoggingMiddleware>();
+
+        // --- PANELS ---
+        services.AddSingleton<IConfigPanel, ClientPanel>();
+
+        // --- ACTION HANDLERS (CLIENT PANEL) ---
+        // Navigation & Routing Actions
+        services.AddSingleton<IPanelActionHandler, OpenStatusMenuAction>();
+        services.AddSingleton<IPanelActionHandler, OpenTargetsAction>();
+        services.AddSingleton<IPanelActionHandler, OpenRenameModalAction>();
+        services.AddSingleton<IPanelActionHandler, OpenZabbixModalAction>();
+        services.AddSingleton<IPanelActionHandler, PromptRenewAction>();
+        services.AddSingleton<IPanelActionHandler, PromptDeleteAction>();
+        services.AddSingleton<IPanelActionHandler, BackToClientOverviewAction>();
+        services.AddSingleton<IPanelActionHandler, CloseClientPanelAction>();
+
+        // Submit & Execution Actions
+        services.AddSingleton<IPanelActionHandler, ToggleClientStatusAction>();
+        services.AddSingleton<IPanelActionHandler, RenameSubmitAction>();
+        services.AddSingleton<IPanelActionHandler, ZabbixSubmitAction>();
+        services.AddSingleton<IPanelActionHandler, ConfirmRenewAction>();
+        services.AddSingleton<IPanelActionHandler, ConfirmDeleteAction>();
+
+        // --- LAYOUT BUILDERS ---
+        services.AddSingleton<ClientOverviewLayoutBuilder>();
+        services.AddSingleton<ClientStatusLayoutBuilder>();
+        services.AddSingleton<ClientTargetsLayoutBuilder>();
+        services.AddSingleton<ClientWarningLayoutBuilder>();
+        services.AddSingleton<ClientDeletedLayoutBuilder>();
+        services.AddSingleton<PanelErrorLayoutBuilder>();
+
+        // --- LAYOUT MAPPERS ---
+        services.AddSingleton<ButtonMapper>();
+        services.AddSingleton<SelectMenuMapper>();
+        services.AddSingleton<TextMapper>();
+        services.AddSingleton<SectionMapper>();
+        services.AddSingleton<SeparatorMapper>();
+        services.AddSingleton<ActionRowMapper>();
+        services.AddSingleton<ContainerMapper>();
+        services.AddSingleton<ModalMapper>();
+        services.AddSingleton<EmbedMapper>();
+
+        services.AddSingleton<ILayoutComponentMapper>(sp => sp.GetRequiredService<ContainerMapper>());
+        services.AddSingleton<ILayoutComponentMapper>(sp => sp.GetRequiredService<SectionMapper>());
+        services.AddSingleton<ILayoutComponentMapper>(sp => sp.GetRequiredService<TextMapper>());
+        services.AddSingleton<ILayoutComponentMapper>(sp => sp.GetRequiredService<SeparatorMapper>());
+        services.AddSingleton<ILayoutComponentMapper>(sp => sp.GetRequiredService<ActionRowMapper>());
+        services.AddSingleton<ILayoutComponentMapper>(sp => sp.GetRequiredService<ButtonMapper>());
+        services.AddSingleton<ILayoutComponentMapper>(sp => sp.GetRequiredService<SelectMenuMapper>());
+        services.AddSingleton<ILayoutComponentMapper>(sp => sp.GetRequiredService<ModalMapper>());
+        services.AddSingleton<ILayoutComponentMapper>(sp => sp.GetRequiredService<EmbedMapper>());
+
+        // --- RENDERERS ---
+        services.AddSingleton<DiscordLayoutMapper>();
+        services.AddSingleton<IPanelRenderer, DiscordPanelRenderer>(); // Main delegator
+
+        // Specific View Renderers
+        services.AddSingleton<IPanelViewRenderer, ClientOverviewRenderer>();
+        services.AddSingleton<IPanelViewRenderer, ClientStatusRenderer>();
+        services.AddSingleton<IPanelViewRenderer, ClientTargetsRenderer>();
+        services.AddSingleton<IPanelViewRenderer, ClientWarningRenderer>();
+        services.AddSingleton<IPanelViewRenderer, ClientDeletedRenderer>();
+
+        // Shared / System Renderers
+        services.AddSingleton<IPanelViewRenderer, PanelErrorRenderer>(); // NEW: Error Boundary Renderer
+
+        // --- MODAL FACTORIES ---
+        services.AddSingleton<IModalFactory, RenameClientModalFactory>();
+        services.AddSingleton<IModalFactory, UpdateZabbixModalFactory>();
+        // +++ // End
+
+
 
         services.AddTransient<ClientCommandsController>();
         services.AddTransient<WellKnownTargetsController>();

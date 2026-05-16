@@ -10,7 +10,8 @@ namespace Application.Services.Discord
             string header,
             string body,
             Color? accentColor = null,
-            string? footerNote = null
+            string? footerNote = null,
+            Action<ContainerBuilder>? appendComponents = null // <--- NOWE
         );
 
         Modal CreateSingleInputModal(

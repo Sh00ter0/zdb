@@ -35,7 +35,7 @@ namespace Infrastructure.Services.Discord
             return sb.ToString();
         }
 
-        public MessageComponent CreateStandardContainer(string header, string body, Color? accentColor = null, string? footerNote = null)
+        public MessageComponent CreateStandardContainer(string header, string body, Color? accentColor = null, string? footerNote = null, Action<ContainerBuilder>? appendComponents = null)
         {
             var color = accentColor ?? AppColors.Info;
             string? avatarUrl = _client.CurrentUser?.GetDisplayAvatarUrl() ?? _client.CurrentUser?.GetDefaultAvatarUrl();
@@ -47,7 +47,16 @@ namespace Infrastructure.Services.Discord
             else
                 containerBuilder.WithTextDisplay($"## {header}");
 
-            containerBuilder.WithSeparator(spacing: SeparatorSpacingSize.Large).WithTextDisplay(body).WithSeparator(spacing: SeparatorSpacingSize.Large).WithTextDisplay(BuildFooterText());
+            containerBuilder.WithSeparator(spacing: SeparatorSpacingSize.Large).WithTextDisplay(body);
+
+            // <--- NOWE: Jeśli przekazaliśmy komponenty UI (przyciski/selecty), doklejamy je --->
+            if (appendComponents != null)
+            {
+                containerBuilder.WithSeparator(spacing: SeparatorSpacingSize.Small, false);
+                appendComponents.Invoke(containerBuilder);
+            }
+
+            containerBuilder.WithSeparator(spacing: SeparatorSpacingSize.Large).WithTextDisplay(BuildFooterText());
             return new ComponentBuilderV2().WithContainer(containerBuilder).Build();
         }
 
@@ -207,7 +216,25 @@ namespace Infrastructure.Services.Discord
             {
                 var optionInfo = action.GetDiscordOptionInfo();
                 if (optionInfo != null && (isRoot || optionInfo.RequiredPermission == null || userPermissions.Contains(optionInfo.RequiredPermission)))
-                    menuBuilder.AddOption(label: optionInfo.Label, value: action.ToString(), description: optionInfo.Description, emote: _emoteCache.GetEmote(optionInfo.Emote));
+                {
+                    // 100% bezpieczne, silnie typowane mapowanie na klucze naszego routera
+                    string routingKey = action switch
+                    {
+                        ApiClientModifyingAction.ChangeName => "open_rename",
+                        ApiClientModifyingAction.EnableOrDisableClient => "open_status",
+                        ApiClientModifyingAction.RenewZabbixConnection => "open_zabbix",
+                        ApiClientModifyingAction.DisplayRelatedTargets => "open_targets",
+                        ApiClientModifyingAction.RenewApiKey => "prompt_renew",
+                        ApiClientModifyingAction.Remove => "prompt_delete",
+                        _ => action.ToString()
+                    };
+
+                    menuBuilder.AddOption(
+                        label: optionInfo.Label,
+                        value: routingKey, // Wstrzykujemy klucz akcji
+                        description: optionInfo.Description,
+                        emote: _emoteCache.GetEmote(optionInfo.Emote));
+                }
             }
 
             if (menuBuilder.Options.Count == 0)

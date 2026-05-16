@@ -131,6 +131,17 @@ public class InteractionHandler(
             return;
         }
 
+        // --- DODAJ TO ZABEZPIECZENIE ---
+        if (context.Interaction is IAutocompleteInteraction autocomplete)
+        {
+            if (!autocomplete.HasResponded)
+                await autocomplete.RespondAsync(Enumerable.Empty<AutocompleteResult>());
+
+            logger.LogWarning("Autocomplete failed for {User}. Reason: {Reason}", context.User.Username, result.ErrorReason);
+            return;
+        }
+        // -------------------------------
+
         string errorHeader = "Error";
         string errorMessage = "An unexpected error occurred.";
         string? errorId = null;
