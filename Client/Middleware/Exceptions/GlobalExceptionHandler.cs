@@ -12,12 +12,10 @@ namespace Client.Middleware.Exceptions
 
         public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken cancellationToken)
         {
-            if (exception is not ProblemException)
+            if (exception is not ProblemException problemException)
             {
                 return true;
             }
-            
-            ProblemException problemException = (ProblemException)exception;
 
             _logger.LogError("[{Exception}] - Encountered an error while processing the request at: {Path}", problemException.Error, context.Request.Path.Value);
 

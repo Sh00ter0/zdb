@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
+using Domain.Constants;
 
 namespace Client.Controllers
 {
@@ -32,7 +33,7 @@ namespace Client.Controllers
         public async Task<IActionResult> ReceiveAlert(ulong targetDiscordId, [FromBody] ZabbixPayload payload)
         {
             _logger.LogInformation("Received Zabbix alert payload for Discord target {TargetId}. Event ID: {EventId}", targetDiscordId, payload.EventId);
-            var apiClientIdClaim = User.FindFirstValue("ApiClientId");
+            var apiClientIdClaim = User.FindFirstValue(CustomClaimTypes.ApiClientId);
             long.TryParse(apiClientIdClaim, out var apiClientId);
 
             await _alertService.ProcessAlertAsync(apiClientId, targetDiscordId, payload);

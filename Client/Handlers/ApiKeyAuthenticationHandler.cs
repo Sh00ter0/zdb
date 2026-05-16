@@ -4,61 +4,47 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using Domain.Constants;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Client.Handlers
 {
-    public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    public class ApiKeyAuthenticationHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder,
+        IProblemDetailsService details,
+        IOptions<AppApiConfig> apiConfig,
+        IApiSecurityStore apiSecurityStore)
+        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
-        private readonly AppApiConfig _apiConfig;
-        private readonly IApiSecurityStore _apiSecurityStore;
-
-        public ApiKeyAuthenticationHandler(
-            IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger,
-            UrlEncoder encoder,
-            IOptions<AppApiConfig> apiConfig,
-            IApiSecurityStore apiSecurityStore)
-            : base(options, logger, encoder)
-        {
-            _apiConfig = apiConfig.Value;
-            _apiSecurityStore = apiSecurityStore;
-        }
+        private readonly AppApiConfig _apiConfig = apiConfig.Value;
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            Logger.LogDebug("Evaluating API key authentication for request to {Path}...", Request.Path);
-
             if (!Request.Headers.TryGetValue(_apiConfig.headerName, out var headerValues))
             {
-                Logger.LogDebug("Authentication skipped: No '{HeaderName}' header found in the request.", _apiConfig.headerName);
                 return AuthenticateResult.NoResult();
             }
 
             if (headerValues.Count != 1 || string.IsNullOrWhiteSpace(headerValues[0]))
             {
-                var remoteIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
-                Logger.LogWarning("Authentication failed: Invalid or multiple '{HeaderName}' headers received from {RemoteIp}.", _apiConfig.headerName, remoteIp);
                 return AuthenticateResult.Fail("Invalid API key header.");
             }
 
             var providedApiKey = headerValues[0]!.Trim();
 
-            var matchedKey = await _apiSecurityStore.ValidateApiKeyAsync(providedApiKey);
-
+            var matchedKey = await apiSecurityStore.ValidateApiKeyAsync(providedApiKey);
             if (matchedKey == null)
             {
-                var remoteIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
-                Logger.LogWarning("Authentication failed: Invalid API key provided from {RemoteIp}.", remoteIp);
                 return AuthenticateResult.Fail("Invalid API key.");
             }
-
-            Logger.LogInformation("Successfully authenticated API request for client: {ClientName} (ID: {ClientId})", matchedKey.Name, matchedKey.ClientId);
 
             var claims = new[]
             {
                 new Claim(ClaimTypes.Name, matchedKey.Name),
-                new Claim("ApiKeyName", matchedKey.Name),
-                new Claim("ApiClientId", matchedKey.ClientId.ToString())
+                new Claim(CustomClaimTypes.ApiKeyName, matchedKey.Name),
+                new Claim(CustomClaimTypes.ApiClientId, matchedKey.ClientId.ToString())
             };
 
             var identity = new ClaimsIdentity(claims, Scheme.Name);
@@ -70,31 +56,27 @@ namespace Client.Handlers
 
         protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
         {
-            var remoteIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
-            Logger.LogDebug("Authentication challenge triggered. Returning 401 Unauthorized to {RemoteIp}.", remoteIp);
-
-            Response.StatusCode = StatusCodes.Status401Unauthorized;
-            Response.ContentType = "application/json";
-
-            await Response.WriteAsJsonAsync(new
-            {
-                error = "Unauthorized",
-                message = $"Provide a valid API key in the '{_apiConfig.headerName}' header."
-            });
+            await WriteResponse(StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid API key.");
         }
 
         protected override async Task HandleForbiddenAsync(AuthenticationProperties properties)
         {
-            var remoteIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
-            Logger.LogWarning("Authorization forbidden. Authenticated client lacks permissions to access {Path}. Returning 403 Forbidden to {RemoteIp}.", Request.Path, remoteIp);
+            await WriteResponse(StatusCodes.Status403Forbidden, "Forbidden",
+                "The authenticated client is not allowed to access this resource.");
+        }
 
-            Response.StatusCode = StatusCodes.Status403Forbidden;
-            Response.ContentType = "application/json";
-
-            await Response.WriteAsJsonAsync(new
+        private async Task WriteResponse(int statusCode, string error, string message)
+        {
+            Response.StatusCode = statusCode;
+            await details.TryWriteAsync(new ProblemDetailsContext()
             {
-                error = "Forbidden",
-                message = "The authenticated client is not allowed to access this resource."
+                HttpContext = Context,
+                ProblemDetails = new ProblemDetails()
+                {
+                    Status = statusCode,
+                    Type = error,
+                    Detail = message
+                }
             });
         }
     }
