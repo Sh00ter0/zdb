@@ -5,65 +5,51 @@ using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Discord
 {
-    public class DiscordEmoteService : IDiscordEmoteService
+    public class DiscordEmoteService(DiscordSocketClient client, ILogger<DiscordEmoteService> logger)
+        : IDiscordEmoteService
     {
-        private readonly DiscordSocketClient _client;
-        private readonly ILogger<DiscordEmoteService> _logger;
-
-        private Dictionary<string, Emote> _emotes = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, Emote> _emotes = new();
 
         private readonly string _emotesDirectory = Path.Combine(AppContext.BaseDirectory, "Assets", "Emotes");
 
-        public DiscordEmoteService(DiscordSocketClient client, ILogger<DiscordEmoteService> logger)
-        {
-            _client = client;
-            _logger = logger;
-        }
+        private bool _needsRefresh = false;
 
-        public async Task RefreshCacheAsync()
+        private async Task RefreshCacheAsync()
         {
             try
             {
-                _logger.LogInformation("Fetching Application Emotes to populate cache...");
-                var fetchedEmotes = await _client.GetApplicationEmotesAsync();
+                logger.LogInformation("Fetching Application Emotes to populate cache...");
+                var fetchedEmotes = await client.GetApplicationEmotesAsync();
+                
+                _emotes = fetchedEmotes.ToDictionary(apiEmote => apiEmote.Name, apiEmote => apiEmote);
 
-                var newDict = new Dictionary<string, Emote>(StringComparer.OrdinalIgnoreCase);
-                foreach (var emote in fetchedEmotes)
-                {
-                    newDict[emote.Name] = emote;
-                }
-
-                _emotes = newDict;
-                _logger.LogInformation("Successfully cached {Count} Application Emotes.", _emotes.Count);
+                logger.LogInformation("Successfully cached {Count} Application Emotes.", _emotes.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch and cache Application Emotes.");
+                logger.LogError(ex, "Failed to fetch and cache Application Emotes.");
             }
         }
 
-        public IEmote? GetEmote(string? name)
+        public IEmote? GetEmote(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
+            if (_emotes.TryGetValue(name, out var appEmote)) return appEmote;
+            
             if (Emote.TryParse(name, out var parsedEmote)) return parsedEmote;
             if (Emoji.TryParse(name, out var parsedEmoji)) return parsedEmoji;
-
-            if (_emotes.TryGetValue(name, out var appEmote))
-            {
-                return appEmote;
-            }
 
             return null;
         }
 
         public async Task SynchronizeEmotesAsync()
         {
-            _logger.LogInformation("Starting Application Emojis synchronization from '{Directory}'...", _emotesDirectory);
+            logger.LogInformation("Starting Application Emojis synchronization from '{Directory}'...", _emotesDirectory);
 
             if (!Directory.Exists(_emotesDirectory))
             {
                 Directory.CreateDirectory(_emotesDirectory);
-                _logger.LogWarning("Emotes directory did not exist. Created a new empty directory. Sync aborted.");
+                logger.LogWarning("Emotes directory did not exist. Created a new empty directory. Sync aborted.");
                 return;
             }
 
@@ -76,66 +62,62 @@ namespace Infrastructure.Services.Discord
                 var localEmoteNames = localFiles
                     .Select(Path.GetFileNameWithoutExtension)
                     .Where(name => !string.IsNullOrWhiteSpace(name))
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    .ToHashSet();
 
-                var currentApiEmotes = _emotes.Values;
+                await DeleteApplicationEmotesAsync(localEmoteNames);
 
-                var emotesToDelete = currentApiEmotes
-                    .Where(apiEmote => !localEmoteNames.Contains(apiEmote.Name))
-                    .ToList();
+                await UploadApplicationEmotesAsync(localEmoteNames!);
 
-                var apiEmoteNames = currentApiEmotes.Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-                var filesToAdd = localFiles
-                    .Where(file => !apiEmoteNames.Contains(Path.GetFileNameWithoutExtension(file)))
-                    .ToList();
-
-                bool cacheNeedsRefresh = false;
-
-                if (emotesToDelete.Count > 0)
+                if (_needsRefresh)
                 {
-                    _logger.LogInformation("Found {Count} obsolete emotes in API to delete.", emotesToDelete.Count);
-                    foreach (var emote in emotesToDelete)
-                    {
-                        _logger.LogInformation("Deleting emote from API: {EmoteName}", emote.Name);
-                        await _client.DeleteApplicationEmoteAsync(emote.Id);
-
-                        await Task.Delay(2000);
-                        cacheNeedsRefresh = true;
-                    }
-                }
-
-                if (filesToAdd.Count > 0)
-                {
-                    _logger.LogInformation("Found {Count} new local emotes to upload.", filesToAdd.Count);
-                    foreach (var file in filesToAdd)
-                    {
-                        var emoteName = Path.GetFileNameWithoutExtension(file);
-                        _logger.LogInformation("Uploading new emote to API: {EmoteName}", emoteName);
-
-                        await using var stream = File.OpenRead(file);
-                        var image = new Image(stream);
-                        await _client.CreateApplicationEmoteAsync(emoteName, image);
-
-                        await Task.Delay(2000);
-                        cacheNeedsRefresh = true;
-                    }
-                }
-
-                if (cacheNeedsRefresh)
-                {
-                    _logger.LogInformation("Synchronization completed with changes. Refreshing internal cache to fetch new IDs...");
+                    logger.LogInformation("Synchronization completed with changes. Refreshing internal cache to fetch new IDs...");
                     await RefreshCacheAsync();
                 }
                 else
                 {
-                    _logger.LogInformation("Synchronization completed. Both API and local directory are perfectly matched.");
+                    logger.LogInformation("Synchronization completed. Both API and local directory are perfectly matched.");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "A critical error occurred during Emote synchronization.");
+                logger.LogError(ex, "A critical error occurred during Emote synchronization.");
             }
+        }
+
+        private async Task UploadApplicationEmotesAsync(HashSet<string> localEmoteNames)
+        {
+            var added = 0;
+            foreach (var key in localEmoteNames)
+            {
+                if (_emotes.ContainsKey(key)) continue;
+                logger.LogInformation("Uploading new emote to Application: {EmoteName}", key);
+
+                await using var stream = File.OpenRead(Path.Combine(_emotesDirectory, key + ".png"));
+                var image = new Image(stream);
+                
+                await client.CreateApplicationEmoteAsync(key, image);
+                await Task.Delay(100);
+                
+                _needsRefresh = true;
+                added++;
+            }
+            logger.LogInformation("Added a total of {Count} new emotes to Application.", added);
+        }
+
+        private async Task DeleteApplicationEmotesAsync(HashSet<string?> localEmoteNames)
+        {
+            var deleted = 0;
+            foreach (var (key, emote) in _emotes)
+            {
+                if (localEmoteNames.Contains(key)) continue;
+                
+                await client.DeleteApplicationEmoteAsync(emote.Id);
+                await Task.Delay(100);
+                
+                _needsRefresh = true;
+                deleted++;
+            }
+            logger.LogInformation("Deleted a total of {deleted} un-synced emotes from Application.", deleted);
         }
     }
 }

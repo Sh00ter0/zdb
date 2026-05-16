@@ -58,22 +58,21 @@ namespace Client.Security
                 await dbContext.Database.MigrateAsync();
                 _logger.LogDebug("Database migrations applied successfully.");
 
-                var testRecord = await dbContext.ZabbixCredentials.AsNoTracking().OrderBy(x => x.Id).FirstOrDefaultAsync();
+                var testRecord = await dbContext.ZabbixCredentials.AsNoTracking().OrderBy(x => x.Id)
+                    .FirstOrDefaultAsync();
 
                 if (testRecord != null)
                 {
-                    try
-                    {
-                        _encryptionService.Decrypt(testRecord.EncryptedApiToken);
-                        _logger.LogDebug("Master encryption key validated against database records successfully.");
-                    }
-                    catch (CryptographicException)
-                    {
-                        _logger.LogCritical("CRITICAL: Master encryption key mismatch. The provided key cannot decrypt existing records. Restore the original key or recreate the database.");
-                        Serilog.Log.CloseAndFlush();
-                        Environment.Exit(1);
-                    }
+                    _encryptionService.Decrypt(testRecord.EncryptedApiToken);
+                    _logger.LogDebug("Master encryption key validated against database records successfully.");
                 }
+            }
+            catch (CryptographicException ex)
+            {
+                _logger.LogCritical(
+                    "CRITICAL: Master encryption key mismatch. The provided key cannot decrypt existing records. Restore the original key or recreate the database.");
+                await Serilog.Log.CloseAndFlushAsync();
+                Environment.Exit(1);
             }
             catch (Exception ex)
             {
@@ -84,27 +83,24 @@ namespace Client.Security
 
         public async Task<ApiClientValidationResult?> ValidateApiKeyAsync(string apiKey)
         {
-            var keyPreview = CreateKeyPreview(apiKey);
-
             try
             {
                 var apiKeyHash = ComputeHash(apiKey);
                 var client = await _apiClientRepository.GetByKeyHashAsync(apiKeyHash);
 
-                if (client != null && client.IsActive)
-                {
-                    return new ApiClientValidationResult(client.Id, client.Name);
-                }
-                return null;
+                return client is { IsActive: true } ? new ApiClientValidationResult(client.Id, client.Name) : null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during API key validation. KeyPreview: {KeyPreview}", keyPreview);
+                var keyPreview = CreateKeyPreview(apiKey);
+                _logger.LogError(ex, "Unexpected error during API key validation. KeyPreview: {KeyPreview}",
+                    keyPreview);
                 return null;
             }
         }
 
-        public async Task<ApiClientCreationResult> CreateApiClientAsync(string name, string zabbixApiUrl, string zabbixApiToken)
+        public async Task<ApiClientCreationResult> CreateApiClientAsync(string name, string zabbixApiUrl,
+            string zabbixApiToken)
         {
             var normalizedClientName = name.Trim();
 
@@ -163,7 +159,8 @@ namespace Client.Security
 
             if (client.ZabbixCredential == null)
             {
-                client.ZabbixCredential = new ZabbixCredentials { AssociatedIntegrationClientId = clientId, CreatedAtUtc = DateTime.UtcNow };
+                client.ZabbixCredential = new ZabbixCredentials
+                    { AssociatedIntegrationClientId = clientId, CreatedAtUtc = DateTime.UtcNow };
             }
 
             client.ZabbixCredential.ApiUrl = newUrl;

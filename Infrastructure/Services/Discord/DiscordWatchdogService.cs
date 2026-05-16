@@ -5,11 +5,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Discord;
 
-public class DiscordWatchdogService(DiscordStartupService discordStartup,
+public class DiscordWatchdogService(
+    DiscordStartupService discordStartup,
     IHttpClientFactory httpClientFactory,
     ILogger<DiscordWatchdogService> logger,
     DiscordStateMediator mediator
-    ) : IDisposable, IHostedService
+) : IDisposable, IHostedService
 {
     private readonly TimeSpan _criticalOfflineThreshold = TimeSpan.FromMinutes(2);
 
@@ -23,15 +24,24 @@ public class DiscordWatchdogService(DiscordStartupService discordStartup,
 
     private async void OnStateChanged(DiscordHealthState newState)
     {
-        switch (newState)
+        try
         {
-            case DiscordHealthState.Healthy:
-                ResetWatcher();
-                break;
-            case DiscordHealthState.Offline:
-                logger.LogError("Discord connection state changed to Offline. Will attempt recovery if condition persists.");
-                await StartWatcher();
-                break;
+            switch (newState)
+            {
+                case DiscordHealthState.Healthy:
+                    ResetWatcher();
+                    break;
+                case DiscordHealthState.Offline:
+                    logger.LogError(
+                        "Discord connection state changed to Offline. Will attempt recovery if condition persists.");
+                    await StartWatcher();
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            if (e is TaskCanceledException or OperationCanceledException)
+                logger.LogInformation("Discord is back to being Healthy. Stopping watcher.");
         }
     }
 
@@ -48,7 +58,7 @@ public class DiscordWatchdogService(DiscordStartupService discordStartup,
     {
         if (!CancelationToken.Token.IsCancellationRequested) return;
         _disconnectedAt ??= DateTimeOffset.UtcNow;
-        CancelationToken = new();
+        CancelationToken = new CancellationTokenSource();
 
         await Task.Delay(_criticalOfflineThreshold, CancelationToken.Token);
 
@@ -56,12 +66,14 @@ public class DiscordWatchdogService(DiscordStartupService discordStartup,
         {
             await Task.Delay(_checkInterval, CancelationToken.Token);
             if (CancelationToken.Token.IsCancellationRequested) return;
-            logger.LogWarning("Discord connection has been offline for {Duration}.", DateTimeOffset.UtcNow - _disconnectedAt.Value);
+            logger.LogWarning("Discord connection has been offline for {Duration}.",
+                DateTimeOffset.UtcNow - _disconnectedAt.Value);
 
             bool isApiReachable = await PingDiscordApiAsync();
             if (!isApiReachable)
             {
-                logger.LogWarning("Discord API is currently unreachable. Aborting client hard reset. Will retry in the next cycle.");
+                logger.LogWarning(
+                    "Discord API is currently unreachable. Aborting client hard reset. Will retry in the next cycle.");
                 continue;
             }
 
@@ -69,11 +81,14 @@ public class DiscordWatchdogService(DiscordStartupService discordStartup,
             _failedResetAttempts++;
             if (_failedResetAttempts >= 3)
             {
-                logger.LogCritical("Failed to restore Discord connection after {Attempts} consecutive hard reset attempts. Manual intervention may be required.", _failedResetAttempts);
+                logger.LogCritical(
+                    "Failed to restore Discord connection after {Attempts} consecutive hard reset attempts. Manual intervention may be required.",
+                    _failedResetAttempts);
             }
             else
             {
-                logger.LogWarning("Hard reset sequence finished, but client failed to connect. Attempt {Attempt}/3.", _failedResetAttempts);
+                logger.LogWarning("Hard reset sequence finished, but client failed to connect. Attempt {Attempt}/3.",
+                    _failedResetAttempts);
             }
         }
     }
