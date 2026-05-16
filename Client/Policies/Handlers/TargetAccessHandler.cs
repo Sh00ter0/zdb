@@ -2,6 +2,7 @@
 using Client.Policies.Requirements;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Domain.Constants;
 
 namespace Client.Policies.Handlers
 {
@@ -59,7 +60,7 @@ namespace Client.Policies.Handlers
 
         private long GetClientIdFromClaim(AuthorizationHandlerContext context)
         {
-            var apiClientId = context.User.FindFirstValue("ApiClientId");
+            var apiClientId = context.User.FindFirstValue(CustomClaimTypes.ApiClientId);
             var isValid = long.TryParse(apiClientId, out long clientId);
 
             if (!isValid) throw new Exception("Client Id is not valid.");
