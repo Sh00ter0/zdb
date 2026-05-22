@@ -8,6 +8,8 @@ using Domain.Enums;
 using Infrastructure.Extensions;
 using System.Reflection;
 using System.Text;
+using Application.Views.Components;
+using Infrastructure.Views.Layouts;
 
 namespace Infrastructure.Services.Discord
 {
@@ -182,6 +184,8 @@ namespace Infrastructure.Services.Discord
 
         public MessageComponent CreateApiClientOverviewContainer(IntegrationClients client, Action<ContainerBuilder> appendComponents = null!)
         {
+            var layout = new StandardLayout(_emoteCache, _client);
+            
             var bulbIconON = _emoteCache.GetEmote("UI_ICON_BULB_ON");
             var bulbIconOFF = _emoteCache.GetEmote("UI_ICON_BULB_OFF");
             var discordCreateTimestamp = $"<t:{((DateTimeOffset)client.CreatedAtUtc).ToUnixTimeSeconds()}:F>";
@@ -190,29 +194,22 @@ namespace Infrastructure.Services.Discord
             string zabbixUrl = string.IsNullOrEmpty(client.ZabbixCredential?.ApiUrl) ? "`Not Configured`" : $"`{client.ZabbixCredential.ApiUrl}`";
 
             var bodyText = $"""
-                **Client Name:** `{client.Name}`
-                **Status:** {statusIcon}
-                **Key Preview:** `{client.KeyPreview}`
-                **Zabbix URL:** {zabbixUrl}
-                **Created At:** {discordCreateTimestamp}
-                **Updated At:** {discordUpdateTimestamp}
-                """;
+                            **Client Name:** `{client.Name}`
+                            **Status:** {statusIcon}
+                            **Key Preview:** `{client.KeyPreview}`
+                            **Zabbix URL:** {zabbixUrl}
+                            **Created At:** {discordCreateTimestamp}
+                            **Updated At:** {discordUpdateTimestamp}
+                            """;
 
-            string? avatarUrl = _client.CurrentUser?.GetDisplayAvatarUrl() ?? _client.CurrentUser?.GetDefaultAvatarUrl();
-            var containerBuilder = new ContainerBuilder().WithAccentColor(new Color(AppColors.Info));
+            layout
+                .Create("Manage API Client")
+                .AddSections([
+                    new TextSection(bodyText),
+                    new ActionSection(appendComponents)
+                ]);
 
-            if (!string.IsNullOrEmpty(avatarUrl)) containerBuilder.WithSection(new[] { new TextDisplayBuilder($"‎‎‎\n### Manage API Client") }, new ThumbnailBuilder(avatarUrl));
-            else containerBuilder.WithTextDisplay($"## Manage API Client");
-
-            containerBuilder.WithSeparator(spacing: SeparatorSpacingSize.Large).WithTextDisplay(bodyText);
-
-            if (appendComponents != null)
-            {
-                containerBuilder.WithSeparator(spacing: SeparatorSpacingSize.Small, false);
-                appendComponents.Invoke(containerBuilder);
-            }
-            containerBuilder.WithSeparator(spacing: SeparatorSpacingSize.Small).WithTextDisplay(BuildFooterText());
-            return new ComponentBuilderV2().WithContainer(containerBuilder).Build();
+            return layout.Build();
         }
 
         public SelectMenuBuilder GetApiClientManagementMenuBuilder(string customId, List<string> userPermissions)
