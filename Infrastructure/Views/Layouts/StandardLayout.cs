@@ -12,6 +12,7 @@ namespace Infrastructure.Views.Layouts;
 public sealed class StandardLayout(IDiscordEmoteService emotes, DiscordSocketClient client) : ILayout
 {
     private string _title = string.Empty;
+    private string _footer = string.Empty;
     private List<IViewSection> Sections { get; } = [];
     private SeparatorSpacingSize Spacing { get; set; } = SeparatorSpacingSize.Large;
     private Color _accentColor = new Color(AppColors.Info);
@@ -49,6 +50,12 @@ public sealed class StandardLayout(IDiscordEmoteService emotes, DiscordSocketCli
         return this;
     }
 
+    public ILayout WithFooter(string footer)
+    {
+        _footer = footer;
+        return this;
+    }
+
     public ILayout AddSection(IViewSection section)
     {
         Sections.Add(section);
@@ -60,7 +67,6 @@ public sealed class StandardLayout(IDiscordEmoteService emotes, DiscordSocketCli
         Sections.AddRange(section);
         return this;
     }
-
     private void AddHeader()
     {
         _container.WithSection(
@@ -71,11 +77,12 @@ public sealed class StandardLayout(IDiscordEmoteService emotes, DiscordSocketCli
 
     private void AddFooter()
     {
+        if (_footer == string.Empty) BuildFooterText();
         _container.WithSeparator(Spacing);
-        _container.WithTextDisplay(BuildFooterText());
+        _container.WithTextDisplay(_footer);
     }
 
-    private string BuildFooterText()
+    private void BuildFooterText()
     {
         var githubIcon = emotes.GetEmote("UI_ICON_GITHUB_WHITE");
         var appAuthor = $"{githubIcon}**[Sh00ter0](https://github.com/Sh00ter0)**";
@@ -91,6 +98,6 @@ public sealed class StandardLayout(IDiscordEmoteService emotes, DiscordSocketCli
                    -# Copyright (c) 2026 — {appAuthor}
                    -# `v{major}.{minor}.{build}`
                    """);
-        return sb.ToString();
+        _footer = sb.ToString();
     }
 }

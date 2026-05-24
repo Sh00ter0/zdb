@@ -18,13 +18,13 @@ namespace Infrastructure.Services.Discord
             string? footerNote = null)
         {
             var layout = new StandardLayout(emoteCache, client)
-                .Create(header);
+                .Create(header)
+                .AddSection(
+                    new TextSection(body)
+                );;
 
             if (accentColor != null) layout.WithAccentColor(accentColor.Value);
-
-            layout.AddSection(
-                new TextSection(body)
-            );
+            if (footerNote != null) layout.WithFooter(footerNote);
 
             return layout.Build();
         }
