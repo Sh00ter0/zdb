@@ -2,15 +2,12 @@
 
 namespace Application.Views.Components;
 
-public class ActionSection(IInteractableComponentBuilder[] actions) : IViewSection
+public class CbActionSection(Action<ContainerBuilder> action) : IViewSection
 {
     public IViewSection Build(ContainerBuilder builder)
     {
         builder.WithSeparator(SeparatorSpacingSize.Small, false);
-        foreach (var action in actions)
-        {
-            builder.WithActionRow(row => row.AddComponent(action));
-        }
+        action.Invoke(builder);
         return this;
     }
 }
