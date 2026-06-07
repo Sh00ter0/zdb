@@ -1,7 +1,6 @@
 ﻿using Application.Common.Zabbix;
 using Application.Exceptions.API;
 using Application.Repositories;
-using Application.Services.Discord;
 using Discord;
 using Discord.WebSocket;
 using Domain.Enums;
@@ -12,7 +11,7 @@ namespace Infrastructure.Services.API
     public class DiscordAlertService(
         IKnownDeliveryTargetRepository targetRepository,
         DiscordSocketClient client,
-        IDiscordUiService uiService)
+        ZabbixAlertUiBuilder alertUiBuilder)
     {
         public async Task ProcessAlertAsync(long clientId, ulong targetId, ZabbixPayload payload)
         {
@@ -22,11 +21,11 @@ namespace Infrastructure.Services.API
                 throw new ProblemException("Invalid Target", "Provided target id is not a valid channel.", StatusCodes.Status400BadRequest);
             }
 
-            var component = uiService.CreateZabbixAlertContainer(payload, false, clientId);
+            var component = alertUiBuilder.CreateAlertContainer(payload, false, clientId);
             var message = await SendAlertAsync(channel, component);
 
             var targetData = await targetRepository.GetByDiscordIdAsync(clientId, targetId);
-            if (targetData.ChannelType == TextChannelType.GuildAnnouncementChannel && targetData.AutoCrosspost)
+            if (targetData != null && targetData.ChannelType == TextChannelType.GuildAnnouncementChannel && targetData.AutoCrosspost)
             {
                 await HandleCrosspostAsync(message);
             }
