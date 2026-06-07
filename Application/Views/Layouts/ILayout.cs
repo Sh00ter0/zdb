@@ -11,4 +11,5 @@ public interface ILayout
     ILayout AddSections(IViewSection[] section);
     ILayout WithAccentColor(uint color);
     ILayout WithSpacing(SeparatorSpacingSize spacing);
+    ILayout WithFooter(string footer);
 }
