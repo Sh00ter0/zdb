@@ -6,7 +6,7 @@ using Domain.Constants;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Extensions;
-using Application.Views.Components;
+using Infrastructure.Views.Components;
 using Infrastructure.Views.Layouts;
 
 namespace Infrastructure.Services.Discord

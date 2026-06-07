@@ -1,6 +1,7 @@
-﻿using Discord;
+﻿using Application.Views.Components;
+using Discord;
 
-namespace Application.Views.Components;
+namespace Infrastructure.Views.Components;
 
 public class CbActionSection(Action<ContainerBuilder> action) : IViewSection
 {
