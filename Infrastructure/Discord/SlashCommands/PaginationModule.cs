@@ -38,7 +38,7 @@ namespace Infrastructure.Discord.SlashCommands
 
             if (sessionData == null || sessionData.Pages.Count == 0)
             {
-                throw new UserVisibleException("The session for this message has expired. Please run the command again.");
+                throw new Exceptions.InteractionException("The session for this message has expired. Please run the command again.");
             }
 
             if (targetPage < 1 || targetPage > sessionData.Pages.Count)

@@ -175,6 +175,7 @@ internal static class HostingExtensions
 
         services.AddMemoryCache();
         services.AddSingleton<InteractionHandler>();
+        services.AddSingleton<InteractionErrorResponder>();
         services.AddSingleton<IApiSecurityStore, ApiSecurityStore>();
         services.AddSingleton<IEncryptionService>(sp => new EncryptionService(masterKey, sp.GetRequiredService<ILogger<EncryptionService>>()));
         services.AddSingleton<DiscordStateService>();
@@ -190,6 +191,8 @@ internal static class HostingExtensions
         services.AddSingleton<IPaginationService, PaginationService>();
         services.AddSingleton<IDiscordTargetSyncService, DiscordTargetSyncService>();
         services.AddSingleton<IDiscordEmoteService, DiscordEmoteService>();
+        services.AddSingleton<ZabbixAlertUiBuilder>();
+        services.AddDiscordSlashCommandComponents();
         services.AddScoped<DiscordAlertService>();
 
         services.AddSingleton<IIntegrationClientRepository, ApiClientRepository>();
@@ -203,6 +206,32 @@ internal static class HostingExtensions
         services.AddSingleton<IAuthorizationHandler, TargetAccessHandler>();
 
         return services;
+    }
+
+    private static IServiceCollection AddDiscordSlashCommandComponents(this IServiceCollection services)
+    {
+        services.Scan(scan => scan
+            .FromAssemblyOf<InteractionHandler>()
+            .AddClasses(classes => classes.Where(IsDiscordSlashCommandComponent))
+            .AsSelf()
+            .WithSingletonLifetime());
+
+        return services;
+    }
+
+    private static bool IsDiscordSlashCommandComponent(Type type)
+    {
+        const string commandNamespace = "Infrastructure.Discord.SlashCommands.Commands";
+
+        if (type.Namespace is null || !type.Namespace.StartsWith(commandNamespace, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return type.Name.EndsWith("Backend", StringComparison.Ordinal)
+               || type.Name.EndsWith("UiBuilder", StringComparison.Ordinal)
+               || type.Name.EndsWith("PanelRenderer", StringComparison.Ordinal)
+               || type.Namespace.EndsWith(".Actions", StringComparison.Ordinal);
     }
 
     public static IServiceCollection AddApplicationSecurity(this IServiceCollection services, AppApiConfig apiConfig)
