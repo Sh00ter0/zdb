@@ -40,7 +40,7 @@ public sealed class ClientRemoveAction(
     public async Task ConfirmAsync(DiscordInteractionView module, long clientId)
     {
         var success = await apiClientRepository.DeleteAsync(clientId);
-        if (!success) throw new UserVisibleException("Failed to remove client. It may have already been deleted.");
+        if (!success) throw new Exceptions.InteractionException("Failed to remove client. It may have already been deleted.", logCopy: true);
 
         var deletedComponents = discordUiService.CreateStandardContainer(
             header: "Client Removed",

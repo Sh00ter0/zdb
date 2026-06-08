@@ -35,7 +35,7 @@ public sealed class ApiClientCommandsBackend(
         try
         {
             var isValidUrl = zabbixApiUrl.IsValidHttpOrHttpsUrl();
-            if (!isValidUrl) throw new UserVisibleException("The provided Zabbix API URL is not valid. Please ensure it starts with http:// or https:// and is properly formatted.");
+            if (!isValidUrl) throw new Exceptions.InteractionException("The provided Zabbix API URL is not valid. Please ensure it starts with http:// or https:// and is properly formatted.");
 
             var createdClient = await apiSecurityStore.CreateApiClientAsync(clientName, zabbixApiUrl, zabbixApiToken);
 
@@ -54,14 +54,14 @@ public sealed class ApiClientCommandsBackend(
         }
         catch (InvalidOperationException ex)
         {
-            throw new UserVisibleException(ex.Message);
+            throw new Exceptions.InteractionException(ex.Message);
         }
     }
 
     public async Task ManageApiClientAsync(DiscordInteractionView module, string clientName)
     {
         var client = await apiClientRepository.GetByNameAsync(clientName);
-        if (client is null) throw new UserVisibleException($"API Client `{clientName}` not found.");
+        if (client is null) throw new Exceptions.InteractionException($"API Client `{clientName}` not found.");
 
         var components = panelRenderer.CreateManagementPanel(client, module.Context);
 
@@ -73,7 +73,7 @@ public sealed class ApiClientCommandsBackend(
     {
         var action = Enum.Parse<ApiClientModifyingAction>(selectedValues[0]);
         var client = await apiClientRepository.GetByIdAsync(clientId);
-        if (client == null) throw new UserVisibleException("Client not found.");
+        if (client == null) throw new Exceptions.InteractionException("Client not found.");
 
         switch (action)
         {

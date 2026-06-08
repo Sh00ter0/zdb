@@ -33,14 +33,14 @@ public sealed class TargetCrosspostAction(
         var newState = bool.Parse(selectedValues[0]);
 
         var targetData = await targetRepository.GetByDiscordIdAsync(clientId, targetDiscordId);
-        if (targetData == null) throw new UserVisibleException("Target not found.");
+        if (targetData == null) throw new Exceptions.InteractionException("Target not found.");
 
         targetData.AutoCrosspost = newState;
         var success = await targetRepository.UpdateAsync(targetData);
-        if (!success) throw new UserVisibleException("Failed to locate the target in the database.");
+        if (!success) throw new Exceptions.InteractionException("Failed to locate the target in the database.");
 
         var client = await apiClientRepository.GetByIdAsync(clientId);
-        if (client == null) throw new UserVisibleException("Client not found.");
+        if (client == null) throw new Exceptions.InteractionException("Client not found.");
 
         var components = panelRenderer.CreateManagementPanel(client, targetData, module.Context);
 

@@ -47,7 +47,7 @@ public sealed class TargetSynchronizationAction(
         await module.DeferInteractionAsync(ephemeral: true);
 
         var target = await targetRepository.GetByDiscordIdAsync(clientId, targetDiscordId);
-        if (target == null) throw new UserVisibleException("Target not found.");
+        if (target == null) throw new Exceptions.InteractionException("Target not found.");
 
         IChannel? resolvedChannel = null;
         IUser? resolvedUser = null;
@@ -58,10 +58,10 @@ public sealed class TargetSynchronizationAction(
             resolvedChannel = (module.Context.Client.GetChannel(targetDiscordId) as IChannel) ?? await module.Context.Client.Rest.GetChannelAsync(targetDiscordId);
 
         var result = await syncService.VerifyAndUpdateTargetAsync(target, resolvedChannel, resolvedUser);
-        if (result is null) throw new UserVisibleException("Failed to synchronize target. It violates the allowed channel types and was automatically removed.");
+        if (result is null) throw new Exceptions.InteractionException("Failed to synchronize target. It violates the allowed channel types and was automatically removed.");
 
         var client = await apiClientRepository.GetByIdAsync(clientId);
-        if (client == null) throw new UserVisibleException("Client not found.");
+        if (client == null) throw new Exceptions.InteractionException("Client not found.");
 
         var components = panelRenderer.CreateManagementPanel(client, result, module.Context);
 

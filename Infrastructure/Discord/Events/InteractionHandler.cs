@@ -1,14 +1,11 @@
-﻿using Application.Repositories;
+using Application.Repositories;
 using Application.Services.Discord;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using Domain.Constants;
 using Infrastructure.Discord.SlashCommands;
-using Infrastructure.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Reflection;
 
 namespace Infrastructure.Discord.Events;
 
@@ -16,12 +13,10 @@ public class InteractionHandler(
     DiscordSocketClient client,
     InteractionService handler,
     IServiceProvider services,
-    IDiscordUiService discordUiService,
     ILogger<InteractionHandler> logger,
-    IDiscordEmoteService emoteCache)
+    IDiscordEmoteService emoteCache,
+    InteractionErrorResponder errorResponder)
 {
-    private const string ErrorIdPrefix = "SYS";
-
     private bool _commandsRegistered = false;
 
     public async Task InitializeAsync()
@@ -99,24 +94,7 @@ public class InteractionHandler(
             }
             catch (Exception ex)
             {
-                var errorId = CreateErrorId();
-                logger.LogCritical(ex, "A critical infrastructure error occurred while trying to route the interaction. ErrorId: {ErrorId}", errorId);
-
-                if (!interaction.HasResponded)
-                {
-                    try
-                    {
-                        var components = discordUiService.CreateStandardContainer(
-                            header: "Critical System Error",
-                            body: "A critical internal error occurred while processing your request.",
-                            accentColor: new Color(AppColors.Error),
-                            footerNote: $"Reference: `{errorId}`"
-                        );
-
-                        await interaction.RespondAsync(components: components, flags: MessageFlags.ComponentsV2, ephemeral: true);
-                    }
-                    catch { }
-                }
+                await errorResponder.RespondToRoutingExceptionAsync(interaction, ex);
             }
         });
 
@@ -131,101 +109,6 @@ public class InteractionHandler(
             return;
         }
 
-        string errorHeader = "Error";
-        string errorMessage = "An unexpected error occurred.";
-        string? errorId = null;
-        Color containerColor = AppColors.Error;
-
-        switch (result.Error)
-        {
-            case InteractionCommandError.UnmetPrecondition:
-                errorHeader = "Access Denied";
-                errorMessage = result.ErrorReason ?? "Access denied.";
-                containerColor = AppColors.Warning;
-                logger.LogWarning("Precondition failed for interaction '{CommandName}' by user {UserId}. Reason: {Reason}", commandInfo?.Name, context.User.Id, errorMessage);
-                break;
-
-            case InteractionCommandError.UnknownCommand:
-                errorMessage = "The requested command is unknown or no longer exists.";
-                logger.LogWarning("User {UserId} tried to execute an unknown command.", context.User.Id);
-                break;
-
-            case InteractionCommandError.BadArgs:
-                errorMessage = "Invalid parameters were provided. Please check your inputs.";
-                containerColor = AppColors.Warning;
-                logger.LogWarning("Bad arguments provided for interaction '{CommandName}' by user {UserId}.", commandInfo?.Name, context.User.Id);
-                break;
-
-            case InteractionCommandError.Exception:
-                Exception? originalException = null;
-                if (result is ExecuteResult execResult)
-                {
-                    originalException = execResult.Exception;
-                    if (originalException is InteractionException interactionEx)
-                    {
-                        originalException = interactionEx.InnerException;
-                    }
-                }
-
-                if (originalException is UserVisibleException userEx)
-                {
-                    errorHeader = "Action Failed";
-                    errorMessage = userEx.Message;
-                    containerColor = AppColors.Warning;
-
-                    logger.LogInformation("User-visible exception during '{CommandName}' for user {UserId}. Message: {Message}",
-                        commandInfo?.Name ?? "Unknown", context.User.Id, errorMessage);
-                }
-                else
-                {
-                    errorId = CreateErrorId();
-                    errorMessage = "An internal application error occurred while executing the command. The administrator has been notified.";
-
-                    logger.LogError(originalException, "Exception thrown during execution of '{CommandName}' for user {UserId}. ErrorId: {ErrorId}. Details: {Details}",
-                        commandInfo?.Name ?? "Unknown", context.User.Id, errorId, result.ErrorReason);
-                }
-                break;
-
-            case InteractionCommandError.Unsuccessful:
-                errorId = CreateErrorId();
-                errorMessage = "The command execution was unsuccessful.";
-                logger.LogError("Command '{CommandName}' execution was unsuccessful for user {UserId}. ErrorId: {ErrorId}. Details: {Details}",
-                    commandInfo?.Name, context.User.Id, errorId, result.ErrorReason);
-                break;
-
-            default:
-                errorMessage = result.ErrorReason ?? errorMessage;
-                logger.LogWarning("Unhandled error type {ErrorType} for interaction '{CommandName}' by user {UserId}. Reason: {Reason}",
-                    result.Error, commandInfo?.Name, context.User.Id, errorMessage);
-                break;
-        }
-
-        var responseComponents = discordUiService.CreateStandardContainer(
-            header: errorHeader,
-            body: errorMessage,
-            accentColor: containerColor,
-            footerNote: errorId != null ? $"Reference: `{errorId}`" : null
-        );
-
-        try
-        {
-            if (!context.Interaction.HasResponded)
-            {
-                await context.Interaction.RespondAsync(components: responseComponents, flags: MessageFlags.ComponentsV2, ephemeral: true);
-            }
-            else
-            {
-                await context.Interaction.FollowupAsync(components: responseComponents, flags: MessageFlags.ComponentsV2, ephemeral: true);
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to send the error feedback message to the user.");
-        }
-    }
-
-    private static string CreateErrorId()
-    {
-        return $"{ErrorIdPrefix}-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        await errorResponder.RespondToFailedExecutionAsync(commandInfo, context, result);
     }
 }

@@ -31,11 +31,11 @@ public sealed class ClientChangeNameAction(
         try
         {
             var client = await apiClientRepository.GetByIdAsync(clientId);
-            if (client == null) throw new UserVisibleException("Client not found.");
+            if (client == null) throw new Exceptions.InteractionException("Client not found.");
 
             client.Name = newName;
             var success = await apiClientRepository.UpdateAsync(client);
-            if (!success) throw new UserVisibleException("Failed to update the client.");
+            if (!success) throw new Exceptions.InteractionException("Failed to update the client.");
 
             var components = panelRenderer.CreateManagementPanel(client, module.Context);
 
@@ -44,7 +44,7 @@ public sealed class ClientChangeNameAction(
         }
         catch (Microsoft.EntityFrameworkCore.DbUpdateException)
         {
-            throw new UserVisibleException($"Failed to rename client. The name `{newName}` is already used.");
+            throw new Exceptions.InteractionException($"Failed to rename client. The name \"{newName}\" is already used.", logCopy: true);
         }
     }
 }

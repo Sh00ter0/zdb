@@ -23,7 +23,7 @@ public sealed class ApiClientPanelRenderer(
     public async Task<MessageComponent> CreateManagementPanelAsync(long clientId, AppInteractionContext context)
     {
         var client = await apiClientRepository.GetByIdAsync(clientId);
-        if (client == null) throw new UserVisibleException("Client not found.");
+        if (client == null) throw new InteractionException("Client not found.");
 
         return CreateManagementPanel(client, context);
     }

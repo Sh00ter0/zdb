@@ -29,7 +29,7 @@ public sealed class AdministrationChangeRoleAction(
             .OrderByDescending(r => r.HierarchyWeight)
             .ToListAsync();
 
-        if (assignableRoles.Count == 0) throw new UserVisibleException("There are no roles available for you to assign.");
+        if (assignableRoles.Count == 0) throw new Exceptions.InteractionException("There are no roles available for you to assign.");
 
         var roleComponents = uiBuilder.CreateOverviewContainer(targetAdmin, targetDiscordUser, cb =>
         {
@@ -45,24 +45,24 @@ public sealed class AdministrationChangeRoleAction(
     {
         var newRoleId = int.Parse(selectedValues[0]);
         var targetAdmin = await adminRepository.GetByDiscordIdAsync(targetDiscordId);
-        if (targetAdmin == null) throw new UserVisibleException("Administrator not found.");
+        if (targetAdmin == null) throw new Exceptions.InteractionException("Administrator not found.");
 
         if (module.Context.User.Id == targetDiscordId)
-            throw new UserVisibleException("Unauthorized action.");
+            throw new Exceptions.InteractionException("Unauthorized action.");
 
         if (module.Context.Admin!.Role.HierarchyWeight <= targetAdmin.Role.HierarchyWeight)
-            throw new UserVisibleException("You can only change permissions of users with a hierarchy strictly lower than your own.");
+            throw new Exceptions.InteractionException("You can only change permissions of users with a hierarchy strictly lower than your own.");
 
         await using var db = await dbFactory.CreateDbContextAsync();
         var newRole = await db.SystemRoles.FindAsync(newRoleId);
-        if (newRole == null) throw new UserVisibleException("The selected role does not exist.");
+        if (newRole == null) throw new Exceptions.InteractionException("The selected role does not exist.");
 
         if (module.Context.Admin!.Role.HierarchyWeight <= newRole.HierarchyWeight)
-            throw new UserVisibleException("You cannot assign a role with a hierarchy weight equal to or higher than your own.");
+            throw new Exceptions.InteractionException("You cannot assign a role with a hierarchy weight equal to or higher than your own.");
 
         targetAdmin.RoleId = newRoleId;
         var success = await adminRepository.UpdateAsync(targetAdmin);
-        if (!success) throw new UserVisibleException("Database error occurred while updating the role.");
+        if (!success) throw new Exceptions.InteractionException("Database error occurred while updating the role.");
 
         if (success)
         {

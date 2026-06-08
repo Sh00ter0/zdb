@@ -31,11 +31,11 @@ public sealed class ClientStatusAction(
         var newState = bool.Parse(selectedValues[0]);
 
         var client = await apiClientRepository.GetByIdAsync(clientId);
-        if (client == null) throw new UserVisibleException("Client not found.");
+        if (client == null) throw new Exceptions.InteractionException("Client not found.");
 
         client.IsActive = newState;
         var success = await apiClientRepository.UpdateAsync(client);
-        if (!success) throw new UserVisibleException("Failed to update client status.");
+        if (!success) throw new Exceptions.InteractionException("Failed to update client status.");
 
         var components = panelRenderer.CreateManagementPanel(client, module.Context);
 

@@ -27,7 +27,7 @@ public sealed class KnownTargetPanelRenderer(
     {
         var target = await targetRepository.GetByDiscordIdAsync(clientId, targetDiscordId);
         var client = await apiClientRepository.GetByIdAsync(clientId);
-        if (target == null || client == null) throw new UserVisibleException("Target or client not found.");
+        if (target == null || client == null) throw new InteractionException("Target or client not found.");
 
         return CreateManagementPanel(client, target, context);
     }

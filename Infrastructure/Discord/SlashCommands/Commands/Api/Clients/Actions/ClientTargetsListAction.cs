@@ -62,7 +62,7 @@ public sealed class ClientTargetsListAction(
 
         if (sessionData == null || sessionData.Pages.Count == 0)
         {
-            throw new UserVisibleException("Failed to generate target list.");
+            throw new Exceptions.InteractionException("Failed to generate target list.");
         }
 
         var listComponents = discordUiService.CreatePaginatedContainer(

@@ -34,27 +34,27 @@ public sealed class AdministrationCommandsBackend(
 
         await using var db = await dbFactory.CreateDbContextAsync();
         var selectedRole = await db.SystemRoles.FindAsync(roleId);
-        if (selectedRole == null) throw new UserVisibleException("The specified role ID does not exist in the system.");
+        if (selectedRole == null) throw new Exceptions.InteractionException("The specified role ID does not exist in the system.");
 
         if (module.Context.Admin!.Role.HierarchyWeight <= selectedRole.HierarchyWeight)
         {
-            throw new UserVisibleException("You can only assign roles that are strictly lower than your own hierarchy weight.");
+            throw new Exceptions.InteractionException("You can only assign roles that are strictly lower than your own hierarchy weight.");
         }
 
         if (user.Id == module.Context.User.Id)
         {
-            throw new UserVisibleException("You cannot manage your own administrative status.");
+            throw new Exceptions.InteractionException("You cannot manage your own administrative status.");
         }
 
         if (user.IsBot)
         {
-            throw new UserVisibleException("Bots cannot be registered as system administrators.");
+            throw new Exceptions.InteractionException("Bots cannot be registered as system administrators.");
         }
 
         var existingAdmin = await adminRepository.GetByDiscordIdAsync(user.Id);
         if (existingAdmin != null)
         {
-            throw new UserVisibleException($"User <@{user.Id}> is already registered in the system.");
+            throw new Exceptions.InteractionException($"User <@{user.Id}> is already registered in the system.");
         }
 
         var newAdmin = new SystemAdministrators
@@ -67,7 +67,7 @@ public sealed class AdministrationCommandsBackend(
         };
 
         var success = await adminRepository.AddAsync(newAdmin);
-        if (!success) throw new UserVisibleException("An internal database error occurred while creating the administrator.");
+        if (!success) throw new Exceptions.InteractionException("An internal database error occurred while creating the administrator.");
 
         var container = discordUiService.CreateStandardContainer(
             header: "Administrator Created",
@@ -146,7 +146,7 @@ public sealed class AdministrationCommandsBackend(
         );
 
         var sessionData = paginationService.GetSessionData(sessionId);
-        if (sessionData == null || sessionData.Pages.Count == 0) throw new UserVisibleException("Failed to generate administrator list.");
+        if (sessionData == null || sessionData.Pages.Count == 0) throw new Exceptions.InteractionException("Failed to generate administrator list.");
 
         var listComponents = discordUiService.CreatePaginatedContainer(
             header: sessionData.Header,
@@ -164,7 +164,7 @@ public sealed class AdministrationCommandsBackend(
         IUser targetUser)
     {
         var targetAdmin = await adminRepository.GetByDiscordIdAsync(targetUser.Id);
-        if (targetAdmin == null) throw new UserVisibleException($"User <@{targetUser.Id}> is not an administrator.");
+        if (targetAdmin == null) throw new Exceptions.InteractionException($"User <@{targetUser.Id}> is not an administrator.");
 
         var components = panelRenderer.CreateManagementPanel(targetAdmin, targetUser, module.Context);
 
@@ -176,16 +176,16 @@ public sealed class AdministrationCommandsBackend(
     {
         var action = Enum.Parse<BotAdminAction>(selectedValues[0]);
         var targetAdmin = await adminRepository.GetByDiscordIdAsync(targetDiscordId);
-        if (targetAdmin == null) throw new UserVisibleException("Administrator not found.");
+        if (targetAdmin == null) throw new Exceptions.InteractionException("Administrator not found.");
 
         if (module.Context.User.Id == targetDiscordId)
-            throw new UserVisibleException("You cannot modify your own administrative status.");
+            throw new Exceptions.InteractionException("You cannot modify your own administrative status.");
 
         if (module.Context.Admin!.Role.HierarchyWeight <= targetAdmin.Role.HierarchyWeight)
-            throw new UserVisibleException("You can only manage users with a hierarchy strictly lower than your own.");
+            throw new Exceptions.InteractionException("You can only manage users with a hierarchy strictly lower than your own.");
 
         var targetDiscordUser = (module.Context.Client.GetUser(targetDiscordId) as IUser) ?? await module.Context.Client.Rest.GetUserAsync(targetDiscordId);
-        if (targetDiscordUser == null) throw new UserVisibleException("Could not fetch user from Discord API.");
+        if (targetDiscordUser == null) throw new Exceptions.InteractionException("Could not fetch user from Discord API.");
 
         switch (action)
         {

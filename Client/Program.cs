@@ -175,6 +175,7 @@ internal static class HostingExtensions
 
         services.AddMemoryCache();
         services.AddSingleton<InteractionHandler>();
+        services.AddSingleton<InteractionErrorResponder>();
         services.AddSingleton<IApiSecurityStore, ApiSecurityStore>();
         services.AddSingleton<IEncryptionService>(sp => new EncryptionService(masterKey, sp.GetRequiredService<ILogger<EncryptionService>>()));
         services.AddSingleton<DiscordStateService>();

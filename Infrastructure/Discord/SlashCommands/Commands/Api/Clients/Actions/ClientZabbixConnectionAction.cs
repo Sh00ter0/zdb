@@ -31,12 +31,12 @@ public sealed class ClientZabbixConnectionAction(
 
         var isValidUrl = modal.Url.IsValidHttpOrHttpsUrl();
 
-        if (!isValidUrl) throw new UserVisibleException("The provided Zabbix API URL is not valid. Please ensure it starts with http:// or https:// and is properly formatted.");
+        if (!isValidUrl) throw new Exceptions.InteractionException("The provided Zabbix API URL is not valid. Please ensure it starts with http:// or https:// and is properly formatted.");
 
         await apiSecurityStore.UpdateZabbixConnectionAsync(clientId, modal.Url, modal.Token);
 
         var client = await apiClientRepository.GetByIdAsync(clientId);
-        if (client == null) throw new UserVisibleException("Client not found.");
+        if (client == null) throw new Exceptions.InteractionException("Client not found.");
 
         var components = panelRenderer.CreateManagementPanel(client, module.Context);
 

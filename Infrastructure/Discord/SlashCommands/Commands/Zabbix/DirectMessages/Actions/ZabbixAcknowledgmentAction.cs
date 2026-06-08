@@ -16,10 +16,10 @@ public sealed class ZabbixAcknowledgmentAction(
         var newAckState = bool.Parse(selectedValues[0]);
 
         var zabbixEvent = await zabbixService.GetEventDetailsAsync(apiId, eventId);
-        if (zabbixEvent == null) throw new UserVisibleException("Event data missing.");
+        if (zabbixEvent == null) throw new Exceptions.InteractionException("Event data missing.");
 
         var success = await zabbixService.AcknowledgeEventAsync(apiId, eventId, null, newAckState, false, zabbixEvent.Severity);
-        if (!success) throw new UserVisibleException("Zabbix API rejected the request.");
+        if (!success) throw new Exceptions.InteractionException("Zabbix API rejected the request.");
 
         var panel = panelRenderer.CreatePanel(apiId, eventId, newAckState, zabbixEvent.Severity);
 

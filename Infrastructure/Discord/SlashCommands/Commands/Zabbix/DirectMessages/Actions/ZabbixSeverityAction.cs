@@ -16,12 +16,12 @@ public sealed class ZabbixSeverityAction(
         var newSeverityValue = int.Parse(selectedValues[0]);
 
         var zabbixEvent = await zabbixService.GetEventDetailsAsync(apiId, eventId);
-        if (zabbixEvent == null) throw new UserVisibleException("The event does not exist on the server.");
+        if (zabbixEvent == null) throw new Exceptions.InteractionException("The event does not exist on the server.");
 
         var currentAckState = zabbixEvent.Acknowledged == 1;
 
         var success = await zabbixService.AcknowledgeEventAsync(apiId, eventId, null, currentAckState, false, newSeverityValue);
-        if (!success) throw new UserVisibleException("Zabbix API rejected the request.");
+        if (!success) throw new Exceptions.InteractionException("Zabbix API rejected the request.");
 
         var panel = panelRenderer.CreatePanel(apiId, eventId, currentAckState, newSeverityValue);
 

@@ -32,11 +32,11 @@ public sealed class TargetChangeNameAction(
         try
         {
             var targetData = await targetRepository.GetByDiscordIdAsync(clientId, targetDiscordId);
-            if (targetData == null) throw new UserVisibleException("Target not found.");
+            if (targetData == null) throw new Exceptions.InteractionException("Target not found.");
 
             targetData.Name = newName;
             var success = await targetRepository.UpdateAsync(targetData);
-            if (!success) throw new UserVisibleException("Failed to find the target, or the provided name is not unique.");
+            if (!success) throw new Exceptions.InteractionException("Failed to find the target, or the provided name is not unique.");
 
             var components = await panelRenderer.CreateManagementPanelAsync(clientId, targetDiscordId, module.Context);
 
@@ -45,7 +45,7 @@ public sealed class TargetChangeNameAction(
         }
         catch (Microsoft.EntityFrameworkCore.DbUpdateException)
         {
-            throw new UserVisibleException($"Failed to rename target. The name `{newName}` is already used by another target in this client.");
+            throw new Exceptions.InteractionException($"Failed to rename target. The name `{newName}` is already used by another target in this client.");
         }
     }
 }

@@ -46,7 +46,7 @@ public sealed class ClientRenewApiKeyAction(
 
         var newKey = await apiSecurityStore.RenewApiKeyAsync(clientId);
         var client = await apiClientRepository.GetByIdAsync(clientId);
-        if (client == null) throw new UserVisibleException("Client not found.");
+        if (client == null) throw new Exceptions.InteractionException("Client not found.");
 
         var components = uiBuilder.CreateOverviewContainer(client, cb =>
         {

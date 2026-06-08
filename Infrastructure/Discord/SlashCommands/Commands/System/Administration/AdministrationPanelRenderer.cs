@@ -24,10 +24,10 @@ public sealed class AdministrationPanelRenderer(
         AppInteractionContext context, ulong targetDiscordId)
     {
         var targetAdmin = await adminRepository.GetByDiscordIdAsync(targetDiscordId);
-        if (targetAdmin == null) throw new UserVisibleException("Administrator not found.");
+        if (targetAdmin == null) throw new InteractionException("Administrator not found.");
 
         var targetDiscordUser = (context.Client.GetUser(targetDiscordId) as IUser) ?? await context.Client.Rest.GetUserAsync(targetDiscordId);
-        if (targetDiscordUser == null) throw new UserVisibleException("Could not fetch user from Discord API.");
+        if (targetDiscordUser == null) throw new InteractionException("Could not fetch user from Discord API.");
 
         var components = CreateManagementPanel(targetAdmin, targetDiscordUser, context);
 

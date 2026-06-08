@@ -46,7 +46,7 @@ public sealed class TargetRemoveAction(
     {
         var target = await targetRepository.GetByDiscordIdAsync(clientId, targetDiscordId);
 
-        if (target is null) throw new UserVisibleException("Target not found.");
+        if (target is null) throw new Exceptions.InteractionException("Target not found.");
 
         IUser targetUser = null!;
         if (target.ChannelType is TextChannelType.DirectMessage)
@@ -55,7 +55,7 @@ public sealed class TargetRemoveAction(
         }
 
         var success = await targetRepository.DeleteByIdAsync(clientId, target.Id);
-        if (!success) throw new UserVisibleException("Failed to remove target. It may have already been deleted.");
+        if (!success) throw new Exceptions.InteractionException("Failed to remove target. It may have already been deleted.");
 
         if (targetUser != null)
         {

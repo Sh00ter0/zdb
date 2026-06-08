@@ -31,8 +31,8 @@ public sealed class KnownTargetCommandsBackend(
     {
         await module.DeferInteractionAsync(ephemeral: true);
 
-        if (channel == null && user == null) throw new UserVisibleException("You must select either a Channel or a User to authorize.");
-        if (channel != null && user != null) throw new UserVisibleException("Please select ONLY ONE option (Channel OR User).");
+        if (channel == null && user == null) throw new Exceptions.InteractionException("You must select either a Channel or a User to authorize.");
+        if (channel != null && user != null) throw new Exceptions.InteractionException("Please select ONLY ONE option (Channel OR User).");
 
         ulong targetId = 0;
         var type = TextChannelType.Unknown;
@@ -49,7 +49,7 @@ public sealed class KnownTargetCommandsBackend(
             if (channel is IGuildChannel guildChannel) guildId = guildChannel.GuildId;
 
             if (channel is INewsChannel) type = TextChannelType.GuildAnnouncementChannel;
-            if (channel is IForumChannel) throw new UserVisibleException("Forum channels cannot be directly authorized. Please select a thread within the forum to authorize.");
+            if (channel is IForumChannel) throw new Exceptions.InteractionException("Forum channels cannot be directly authorized. Please select a thread within the forum to authorize.");
             else if (channel is SocketThreadChannel thread)
             {
                 if (thread.ParentChannel is IForumChannel) type = TextChannelType.GuildForumThreadChannel;
@@ -63,7 +63,7 @@ public sealed class KnownTargetCommandsBackend(
         }
 
         var client = await apiClientRepository.GetByNameAsync(clientName);
-        if (client == null || !client.IsActive) throw new UserVisibleException($"Failed to add target. Active API Client `{clientName}` was not found.");
+        if (client == null || !client.IsActive) throw new Exceptions.InteractionException($"Failed to add target. Active API Client `{clientName}` was not found.");
 
         var newTarget = new KnownDeliveryTargets
         {
@@ -80,11 +80,11 @@ public sealed class KnownTargetCommandsBackend(
         try
         {
             var success = await targetRepository.AddAsync(newTarget);
-            if (!success) throw new UserVisibleException("An unexpected database error occurred while adding the target.");
+            if (!success) throw new Exceptions.InteractionException("An unexpected database error occurred while adding the target.");
         }
         catch (Microsoft.EntityFrameworkCore.DbUpdateException)
         {
-            throw new UserVisibleException($"Failed to add target. The target has already been authorized or the display name is not unique for `{clientName}`.");
+            throw new Exceptions.InteractionException($"Failed to add target. The target has already been authorized or the display name is not unique for `{clientName}`.");
         }
 
         if (newTarget.ChannelType is TextChannelType.DirectMessage)
@@ -129,15 +129,15 @@ public sealed class KnownTargetCommandsBackend(
         string rawTargetId)
     {
         var client = await apiClientRepository.GetByNameAsync(clientName);
-        if (client is null) throw new UserVisibleException($"API Client `{clientName}` not found.");
+        if (client is null) throw new Exceptions.InteractionException($"API Client `{clientName}` not found.");
 
         if (!ulong.TryParse(rawTargetId, out var targetDiscordId))
         {
-            throw new UserVisibleException("Invalid target format. Please select a valid target from the autocomplete list.");
+            throw new Exceptions.InteractionException("Invalid target format. Please select a valid target from the autocomplete list.");
         }
 
         var target = await targetRepository.GetByDiscordIdAsync(client.Id, targetDiscordId);
-        if (target == null) throw new UserVisibleException("Target not found.");
+        if (target == null) throw new Exceptions.InteractionException("Target not found.");
 
         var components = panelRenderer.CreateManagementPanel(client, target, module.Context);
 
@@ -151,7 +151,7 @@ public sealed class KnownTargetCommandsBackend(
         var client = await apiClientRepository.GetByIdAsync(clientId);
         var target = await targetRepository.GetByDiscordIdAsync(clientId, targetDiscordId);
 
-        if (client == null || target == null) throw new UserVisibleException("Target or client not found.");
+        if (client == null || target == null) throw new Exceptions.InteractionException("Target or client not found.");
 
         switch (action)
         {

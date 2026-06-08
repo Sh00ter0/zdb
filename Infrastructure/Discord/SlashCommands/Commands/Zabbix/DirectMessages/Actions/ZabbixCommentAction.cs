@@ -37,7 +37,7 @@ public sealed class ZabbixCommentAction(
         }
         else
         {
-            throw new UserVisibleException("Zabbix API rejected the request.");
+            throw new Exceptions.InteractionException("Zabbix API rejected the request.");
         }
     }
 }

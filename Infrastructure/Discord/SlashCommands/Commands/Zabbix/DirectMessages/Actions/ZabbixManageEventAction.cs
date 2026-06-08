@@ -14,7 +14,7 @@ public sealed class ZabbixManageEventAction(
         await module.DeferInteractionAsync(ephemeral: true);
 
         var zabbixEvent = await zabbixService.GetEventDetailsAsync(apiId, eventId);
-        if (zabbixEvent == null) throw new UserVisibleException("Failed to retrieve event details from the Zabbix server.");
+        if (zabbixEvent == null) throw new Exceptions.InteractionException("Failed to retrieve event details from the Zabbix server.");
 
         var currentAckState = zabbixEvent.Acknowledged == 1;
         var currentSeverity = zabbixEvent.Severity;

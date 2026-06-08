@@ -33,20 +33,20 @@ public sealed class AdministrationStatusAction(
     {
         var newState = bool.Parse(selectedValues[0]);
         var targetAdmin = await adminRepository.GetByDiscordIdAsync(targetDiscordId);
-        if (targetAdmin == null) throw new UserVisibleException("Administrator not found.");
+        if (targetAdmin == null) throw new Exceptions.InteractionException("Administrator not found.");
 
         if (module.Context.User.Id == targetDiscordId)
-            throw new UserVisibleException("Unauthorized action.");
+            throw new Exceptions.InteractionException("Unauthorized action.");
 
         if (module.Context.Admin!.Role.HierarchyWeight <= targetAdmin.Role.HierarchyWeight)
-            throw new UserVisibleException("You can only change the status of users with a hierarchy strictly lower than your own.");
+            throw new Exceptions.InteractionException("You can only change the status of users with a hierarchy strictly lower than your own.");
 
         targetAdmin.IsActive = newState;
         var success = await adminRepository.UpdateAsync(targetAdmin);
-        if (!success) throw new UserVisibleException("Database error occurred while updating the status.");
+        if (!success) throw new Exceptions.InteractionException("Database error occurred while updating the status.");
 
         var targetDiscordUser = (module.Context.Client.GetUser(targetDiscordId) as IUser) ?? await module.Context.Client.Rest.GetUserAsync(targetDiscordId);
-        if (targetDiscordUser == null) throw new UserVisibleException("Could not fetch user from Discord API.");
+        if (targetDiscordUser == null) throw new Exceptions.InteractionException("Could not fetch user from Discord API.");
 
         var components = panelRenderer.CreateManagementPanel(targetAdmin, targetDiscordUser, module.Context);
 
